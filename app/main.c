@@ -156,7 +156,7 @@ timer_handler(void){
         break;
         case 1:
             if(f_progress->progress< 1.0){
-                gps_init(&gps_serial, GPS_SERIAL_SOURCE, f_progress);
+                gps_init( GPS_SERIAL_SOURCE, f_progress);
                 set_loading_module_progress(builder, (f_progress->progress+(float)function_init_counter-1)/(float)init_module, f_progress->message );
             } 
             else
@@ -167,7 +167,8 @@ timer_handler(void){
             function_progress= 0.5;
             set_loading_module_progress(builder, (function_progress+(float)function_init_counter-1)/(float)init_module, function_progress_message );
 
-            gps_read_all(gps_serial, device);
+            //gps_serial= gps_open_connection(GPS_SERIAL_SOURCE);
+            gps_read_all(GPS_SERIAL_SOURCE, device);
             if(device->position->fix_quality>= 1){
                 set_loading_module_progress(builder, (function_progress+(float)function_init_counter-1)/(float)init_module, function_progress_message );
                 if(device->position->lat != 0 && device->position->lon != 0){
@@ -228,7 +229,7 @@ timer_handler(void){
 
             /* ************** GPS *************************** */
 
-            gps_read_all(gps_serial, device);
+            gps_read_all(GPS_SERIAL_SOURCE, device);
 
             if(device->position->fix_quality>= 1){
                 set_loading_module_progress(builder, (function_progress+(float)function_init_counter-1)/(float)init_module, function_progress_message );
@@ -242,11 +243,11 @@ timer_handler(void){
                         osm_gps_map_gps_add (map, device->position->lat, device->position->lon, 0);
                     }
 
-                    osm_gps_map_set_center_and_zoom ( map, device->position->lat, device->position->lon, 18);
+                    //osm_gps_map_set_center_and_zoom ( map, device->position->lat, device->position->lon, 18);
                     ui_set_flag(GPS_ICON_FLAG);
                     ui_gps_icon_change( builder );
 
-                    save_log_to_file(device);
+                    //save_log_to_file(device);
 
                 }
             }
@@ -323,15 +324,15 @@ main( int argc, char * argv[] ){
     image_src = gdk_pixbuf_new_from_file (START_BACKGROUND_SRC, NULL);
     gtk_image_set_from_pixbuf(image, image_src);
 
-    /*OsmGpsMapSource_t source = OSM_GPS_MAP_SOURCE_GOOGLE_SATELLITE;
+    OsmGpsMapSource_t source = OSM_GPS_MAP_SOURCE_GOOGLE_SATELLITE;
 
     if ( !osm_gps_map_source_is_valid(source) )
-        return 1;    */
+        return 1;    
 
     g_strdup(OSM_GPS_MAP_CACHE_DISABLED);
     
     map = g_object_new (OSM_TYPE_GPS_MAP,
-                     "map-source", "maps/map",
+                     "map-source", source,
                      "tile-cache", "/tmp/",
                       NULL);
     /*osd = g_object_new (OSM_TYPE_GPS_MAP_OSD,
