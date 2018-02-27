@@ -6,11 +6,11 @@
 extern "C" {
 #endif
 
-
 #include "def.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <termios.h>
@@ -24,6 +24,12 @@ struct functionProgress{
     struct timeval start_time;
     int error_code;
 };
+
+#define GPS_SET_BAUDRATE_115200		"$PMTK251,115200*1F\r\n"
+#define GPS_SET_UPDATERATE_5HZ		"$PMTK220,200*2C\r\n"
+
+
+bool time_delay(struct timeval  time_start, float delay_in_sec);
 
 /**
 * Open the serial port connection.
@@ -45,7 +51,7 @@ int gps_set_interface_attribs (int serial_port, int speed, int parity);
   1 - Błąd otwarcia portu szeregowego modułu GPS
 */
 
-int gps_init(int *tty_fd, char *gps_source, struct functionProgress *f_progress);
+int gps_init( char *gps_source, struct functionProgress *f_progress);
 
 
 
@@ -71,7 +77,7 @@ int gps_position_data_update(char *sentence, device_data *dev);
 * Read all sentences available in one time period
 */
 
-void gps_read_all(int serial_port, device_data *dev);
+int gps_read_all(char *gps_source, device_data *dev);
 
 
 #endif
