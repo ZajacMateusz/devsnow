@@ -31,8 +31,6 @@ int  gps_serial= -1;
 
 int init_module= 3;
 struct timeval  function_start;
-float function_progress= 0.0;
-char *function_progress_message= "status";
 
 
 /* ******************* variables **************************** */
@@ -141,6 +139,12 @@ ui_map_set_center(void){
     osm_gps_map_set_center_and_zoom ( map, device->position->lat, device->position->lon, 20);  
 } 
 
+static void
+print_error(char *message){
+    printf("\nERROR: %s\n\n", message);
+    gtk_main_quit();
+}
+
 
 
 
@@ -156,34 +160,42 @@ timer_handler(void){
         break;
         case 1:
             if(f_progress->progress< 1.0){
-                gps_init( GPS_SERIAL_SOURCE, f_progress);
-                set_loading_module_progress(builder, (f_progress->progress+(float)function_init_counter-1)/(float)init_module, f_progress->message );
+                if(gps_init( GPS_SERIAL_SOURCE, f_progress)== 1)
+                    set_loading_module_progress(builder, (f_progress->progress+(float)function_init_counter-1)/(float)init_module, f_progress->message );
+                else{
+                    print_error(f_progress->message);
+                    return false;
+                }
             } 
             else
                 ++function_init_counter;
         break;
         case 2:
-            function_progress_message= "Oczekiwanie na ustalenie pozycji geograficznej";
-            function_progress= 0.5;
-            set_loading_module_progress(builder, (function_progress+(float)function_init_counter-1)/(float)init_module, function_progress_message );
+            f_progress->message= "Oczekiwanie na ustalenie pozycji geograficznej";
+            f_progress->progress= 0.5;
+            set_loading_module_progress(builder, (f_progress->progress+(float)function_init_counter-1)/(float)init_module, f_progress->message );
 
-            //gps_serial= gps_open_connection(GPS_SERIAL_SOURCE);
-            gps_read_all(GPS_SERIAL_SOURCE, device);
-            if(device->position->fix_quality>= 1){
-                set_loading_module_progress(builder, (function_progress+(float)function_init_counter-1)/(float)init_module, function_progress_message );
-                if(device->position->lat != 0 && device->position->lon != 0){
-                    osm_gps_map_set_center_and_zoom ( map, device->position->lat, device->position->lon, 20);                    
-                }
-                function_progress= 0.0;
-                ++function_init_counter;
-            }           
+            if(gps_read_all(GPS_SERIAL_SOURCE, device)== 1){
+                if(device->position->fix_quality>= 1){
+                    //set_loading_module_progress(builder, (f_progress->progress+(float)function_init_counter-1)/(float)init_module, f_progress->message );
+                    if(device->position->lat != 0 && device->position->lon != 0){
+                        osm_gps_map_set_center_and_zoom ( map, device->position->lat, device->position->lon, 20);                    
+                    }
+                    f_progress->progress= 0.0;
+                    ++function_init_counter;
+                }    
+            }
+            else{
+                f_progress->progress= 0;
+                --function_init_counter;
+            }       
          
         break;
         case 3:
         {
-            function_progress_message= "Odczyt danych z czujników";
-            set_loading_module_progress(builder, (function_progress+(float)function_init_counter-1)/(float)init_module, function_progress_message );
-            if(function_progress< 1.0){
+            f_progress->message= "Odczyt danych z czujników";
+            set_loading_module_progress(builder, (f_progress->progress+(float)function_init_counter-1)/(float)init_module, f_progress->message );
+            if(f_progress->progress< 1.0){
                 GDateTime *date_time;    
                 date_time = g_date_time_new_now_local();                        // get local time
                 device->sys_time = g_date_time_format(date_time, "%H:%M:%S");   
@@ -192,13 +204,11 @@ timer_handler(void){
 
                 if( sec % 5 == 2){
                     ui_read_temp_and_hum();
-                    function_progress= 1.0;
-                    set_loading_module_progress(builder, (function_progress+(float)function_init_counter-1)/(float)init_module, function_progress_message );
+                    f_progress->progress= 1.0;
+                    set_loading_module_progress(builder, (f_progress->progress+(float)function_init_counter-1)/(float)init_module, f_progress->message );
                 }
             } 
             else{
-
-                
                 on_set_information(builder, device);              
                 ++function_init_counter;
             }
@@ -206,8 +216,8 @@ timer_handler(void){
         }
         case 4:
         {
-            function_progress_message= "Konfiguracja interfejsu";
-            set_loading_module_progress(builder, (function_progress+(float)function_init_counter-1)/(float)init_module, function_progress_message );
+            f_progress->message= "Konfiguracja interfejsu";
+            set_loading_module_progress(builder, (f_progress->progress+(float)function_init_counter-1)/(float)init_module, f_progress->message );
             GtkWidget * start_window;    
             start_window = GTK_WIDGET( gtk_builder_get_object( builder, "start_window" ) ); 
             gtk_widget_destroy(GTK_WIDGET(start_window));
@@ -228,11 +238,10 @@ timer_handler(void){
                 ui_read_temp_and_hum();
 
             /* ************** GPS *************************** */
-
-            gps_read_all(GPS_SERIAL_SOURCE, device);
+            int gps_read_status;
+            gps_read_status= gps_read_all(GPS_SERIAL_SOURCE, device);
 
             if(device->position->fix_quality>= 1){
-                set_loading_module_progress(builder, (function_progress+(float)function_init_counter-1)/(float)init_module, function_progress_message );
                 if(device->position->lat != 0 && device->position->lon != 0){
                     osm_gps_map_image_remove_all (map);
                     GdkPixbuf * image;
@@ -240,10 +249,10 @@ timer_handler(void){
                     if(image!= NULL){
                         //osm_gps_map_image_add(map, device->position->lat, device->position->lon, image);
                         osm_gps_map_gps_clear (map);
-                        osm_gps_map_gps_add (map, device->position->lat, device->position->lon, 0);
+                        osm_gps_map_gps_add (map, device->position->lat, device->position->lon, device->position->course);
                     }
 
-                    //osm_gps_map_set_center_and_zoom ( map, device->position->lat, device->position->lon, 18);
+                    osm_gps_map_set_center_and_zoom ( map, device->position->lat, device->position->lon, 18);
                     ui_set_flag(GPS_ICON_FLAG);
                     ui_gps_icon_change( builder );
 
@@ -278,6 +287,7 @@ main( int argc, char * argv[] ){
     device->position->lat = 0;
     device->position->lon = 0;
     device->position->speed= 0;
+    device->position->course= 0;
     device->position->alt= 0;
     device->temperature = 0;  
     device->snow_depth= 0.00;  

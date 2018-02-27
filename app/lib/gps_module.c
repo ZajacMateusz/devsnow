@@ -73,7 +73,6 @@ bool time_delay(struct timeval  time_start, float delay_in_sec){
 
 int gps_init(char *gps_source, struct functionProgress *f_progress){
 
-
     switch((int)(f_progress->progress* 100)){
         case 0:            
             f_progress->message = "Inicjalizacja modułu GPS";
@@ -118,9 +117,8 @@ int gps_init(char *gps_source, struct functionProgress *f_progress){
                 f_progress->progress= 1.0;
             }
             break;
-        return 1;
     }
-    //return true;
+    return 1;
 }
 
 void gps_print_sentence(char * sentence){
@@ -134,12 +132,12 @@ void gps_print_sentence(char * sentence){
 }
 
 int gps_read_sentence(int serial_port, char *sentence, int offset_on){
-        
+
     struct timeval  tv1, tv2;        
     double offset= 0;
     unsigned char c='0';
-    if(offset_on)
-        gettimeofday(&tv1, NULL);
+    gettimeofday(&tv1, NULL);
+
     while (c!='q'){ 
         if (read(serial_port,&c,1)>0){
             if(c=='$'){
@@ -159,6 +157,13 @@ int gps_read_sentence(int serial_port, char *sentence, int offset_on){
             offset= (double) (tv2.tv_usec - tv1.tv_usec) / 1000000 + (double) (tv2.tv_sec - tv1.tv_sec); 
             if(offset> 0.05)
                 break; 
+        }
+        else{
+            gettimeofday(&tv2, NULL);
+            offset= (double) (tv2.tv_usec - tv1.tv_usec) / 1000000 + (double) (tv2.tv_sec - tv1.tv_sec); 
+            if(offset> 1.0)
+                break; 
+            
         }
     }
     if(c!='q')
@@ -186,7 +191,8 @@ int gps_position_data_update(char *sentence, device_data *dev){
             if (minmea_parse_rmc(&frame, line)) {
                 dev->position->lat = minmea_tocoord(&frame.latitude);
                 dev->position->lon = minmea_tocoord(&frame.longitude);
-                dev->position->speed = minmea_tofloat(&frame.speed);
+                dev->position->speed = minmea_tofloat(&frame.speed);                
+                dev->position->course = minmea_tofloat(&frame.course);
             }
             break;
         } 
@@ -322,7 +328,11 @@ int gps_read_all(char *gps_source, device_data *dev){
     while(!stop){
         if(!gps_read_sentence(serial_port, sentence, offset)){
             stop= 1;
-            return 1;
+            close(serial_port);
+            if( first_sentence )
+                return 1;
+            else
+                return 0;
         }
         else{                        
             if(!first_sentence && *(sentence+ 3* size_char) == 'G' && *(sentence+ 4* size_char) == 'G' && *(sentence+ 5* size_char) == 'A'){ 

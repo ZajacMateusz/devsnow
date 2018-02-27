@@ -12,6 +12,7 @@ typedef struct _nmea{
     float  lon;        /**< Longitude in NDEG - [degree][min].[sec/60] */
     char    ew;         /**< [E]ast or [W]est */
     float speed;
+    float course;
     float alt;
     char date[100];
     int fix_quality;
