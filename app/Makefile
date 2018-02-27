@@ -33,6 +33,7 @@ start: app
 
 app: main.c $(FILE_FLAG)
 	$(CC) $(FILE_LINKER) $(mapviewer_CFLAGS) $(GTK_LIBS) src/def.h main.c  -o app  -lm -lgps -pedantic -Wall
+	$(RM) src/*.gch
 
 clean:
 	$(RM) app minmea.o gps_module.o ui_library.o src/*.gch
