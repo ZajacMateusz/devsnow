@@ -10,6 +10,8 @@ import smbus
 import os
 import subprocess
 
+time.sleep(3)
+
 #subprocess.call("python /home/pi/app/scripts/LED.py RED OFF" , shell=True)
 
 LOGS_DIRECTORY = "/media/pi/DATA/logs/thp_data/"
@@ -139,7 +141,7 @@ while True:
 
         if humidity is not None and temperature is not None and humidity_2 is not None and temperature_2 is not None and pressure is not None:
             #info = 'THP_DATA T_IN={0:0.1f}  H_IN={1:0.1f} T_OUT={2:0.1f}  H_OUT={3:0.1f} P_IN={4:0.2f}'.format(temperature, humidity, temperature_2, humidity_2, pressure)
-            info = 'INFO {0:0.1f} {1:0.1f} {2:0.1f} {3:0.1f} {4:0.2f}'.format(temperature, humidity, temperature_2, humidity_2, pressure)
+            info = 'INFO\t{0:0.1f}\t{1:0.1f}\t{2:0.1f}\t{3:0.1f}\t{4:0.2f}'.format(temperature, humidity, temperature_2, humidity_2, pressure)
             read_ok = True
         else:
             break
@@ -153,7 +155,7 @@ while True:
             #subprocess.call("rm "+ LOGS_DIRECTORY+ "THP_DATA_CURRENT.log ", shell=True)
         file = open(LOGS_DIRECTORY + "THP_DATA_CURRENT.log", 'w+')
         #print(time.strftime("%Y-%m-%d %H:%M:%S,000",time.localtime())+ ' '+ info)
-        file.write(time.strftime("%Y-%m-%d %H:%M:%S,000",time.localtime())+ ' '+ info)
+        file.write(time.strftime("%Y-%m-%d\t%H:%M:%S,000",time.localtime())+ '\t'+ info)
         file.close()
         
         
