@@ -18,14 +18,26 @@ typedef struct _nmea{
     int fix_quality;
 }nmea;
 
+typedef struct _imu
+{
+    float r;
+    float p;
+    float y;
+    float m;
+}imu;
+
 typedef struct device_data{
      nmea *position;
+     imu *imu_data;
+     imu *imu_zero;
      float snow_depth;
      char *sys_time;
      float temperature;
      float humidity;
      float pressure;
 }device_data;
+
+
 
 device_data *device; 
 
@@ -60,6 +72,8 @@ device_data *device;
 #define INDENT_SPACES          			"  " 
 
 #define ATMOSPHERIC_CONDITIONS_LOG_SRC	"/media/pi/DATA/logs/thp_data/THP_DATA_CURRENT.log"
+#define IMU_LOG_SRC                     "/media/pi/DATA/logs/imu_data/IMU_DATA_CURRENT.log"
+#define IMU_ZERO_LOG_SRC                "/media/pi/DATA/logs/imu_data/IMU_DATA_ZERO.log"
 #define DEVICE_DATA_LOG_SRC				"/media/pi/DATA/logs/device_data/"
 
 #endif
