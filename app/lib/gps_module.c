@@ -179,8 +179,8 @@ int gps_position_data_update(char *sentence, device_data *dev){
 	int i= 0;
 	char h[2], m[2], s[2];
 	int microseconds;
-	struct minmea_sentence_rmc frame;
-	struct minmea_sentence_gga frame;
+	struct minmea_sentence_rmc frame_rmc;
+	struct minmea_sentence_gga frame_gga;
 
 	while (c != '\n') {
 	c = *(sentence + i * sizeof(*sentence));
@@ -190,38 +190,38 @@ int gps_position_data_update(char *sentence, device_data *dev){
 	}
 	switch (minmea_sentence_id(line, false)) {
 		case MINMEA_SENTENCE_RMC: {
-			if (minmea_parse_rmc(&frame, line)) {
-				dev->position->lat = minmea_tocoord(&frame.latitude);
-				dev->position->lon = minmea_tocoord(&frame.longitude);
+			if (minmea_parse_rmc(&frame_rmc, line)) {
+				dev->position->lat = minmea_tocoord(&frame_rmc.latitude);
+				dev->position->lon = minmea_tocoord(&frame_rmc.longitude);
 				dev->position->speed =
-					minmea_tofloat(&frame.speed) * GPS_KNOTS_TO_KM_PER_H;
-				dev->position->course = minmea_tofloat(&frame.course);
+					minmea_tofloat(&frame_rmc.speed) * GPS_KNOTS_TO_KM_PER_H;
+				dev->position->course = minmea_tofloat(&frame_rmc.course);
 			}
 			break;
 		}
 		case MINMEA_SENTENCE_GGA: {
-			if (minmea_parse_gga(&frame, line)) {
-				dev->position->alti = minmea_tofloat(&frame.altitude);
-				dev->position->fix_quality = frame.fix_quality;
-				microseconds = frame.time.microseconds / 10000;
+			if (minmea_parse_gga(&frame_gga, line)) {
+				dev->position->alt = minmea_tofloat(&frame_gga.altitude);
+				dev->position->fix_quality = frame_gga.fix_quality;
+				microseconds = frame_gga.time.microseconds / 10000;
 				if (microseconds != 0) {
 					microseconds /= 10;
 				}
 				/* strefa czasowa + 1 */
-				if (frame.time.hours < 9) {
-					sprintf(h, "0%d", frame.time.hours + 1);
+				if (frame_gga.time.hours < 9) {
+					sprintf(h, "0%d", frame_gga.time.hours + 1);
 				} else {
-					sprintf(h, "%d", frame.time.hours + 1);
+					sprintf(h, "%d", frame_gga.time.hours + 1);
 				}
-				if (frame.time.minutes < 10) {
-					sprintf(m, "0%d", frame.time.minutes);
+				if (frame_gga.time.minutes < 10) {
+					sprintf(m, "0%d", frame_gga.time.minutes);
 				} else {
-					sprintf(m, "%d", frame.time.minutes);
+					sprintf(m, "%d", frame_gga.time.minutes);
 				}
-				if (frame.time.seconds < 10) {
-					sprintf(s, "0%d", frame.time.seconds);
+				if (frame_gga.time.seconds < 10) {
+					sprintf(s, "0%d", frame_gga.time.seconds);
 				} else {
-					sprintf(s, "%d", frame.time.seconds);
+					sprintf(s, "%d", frame_gga.time.seconds);
 				}
 				sprintf(dev->position->time, "%s:%s:%s:%d0", h, m, s, microseconds );
 			}
