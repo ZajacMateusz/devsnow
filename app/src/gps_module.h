@@ -27,6 +27,7 @@ struct functionProgress{
 
 #define GPS_SET_BAUDRATE_115200		"$PMTK251,115200*1F\r\n"
 #define GPS_SET_UPDATERATE_5HZ		"$PMTK220,200*2C\r\n"
+#define GPS_KNOTS_TO_KM_PER_H		1.852
 
 
 bool time_delay(struct timeval  time_start, float delay_in_sec);

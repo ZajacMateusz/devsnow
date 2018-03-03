@@ -191,7 +191,7 @@ int gps_position_data_update(char *sentence, device_data *dev){
             if (minmea_parse_rmc(&frame, line)) {
                 dev->position->lat = minmea_tocoord(&frame.latitude);
                 dev->position->lon = minmea_tocoord(&frame.longitude);
-                dev->position->speed = minmea_tofloat(&frame.speed);                
+                dev->position->speed = minmea_tofloat(&frame.speed) * GPS_KNOTS_TO_KM_PER_H;
                 dev->position->course = minmea_tofloat(&frame.course);
             }
             break;
