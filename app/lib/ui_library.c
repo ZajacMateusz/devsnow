@@ -137,6 +137,12 @@ void on_set_information(GtkBuilder * builder,  device_data *device){
     sprintf(text, "%0.1f%c", device->humidity, znak);
     ui_set_label_text(builder, "lb_hum", text);
 
+    sprintf(text, "%0.0f°", device->imu_data->r);
+    ui_set_label_text(builder, "lb_rotate_1", text);
+
+    sprintf(text, "%0.0f°", device->imu_data->p);
+    ui_set_label_text(builder, "lb_rotate_2", text);
+
     sprintf(text, "%0.1fkPa", device->pressure);
     ui_set_label_text(builder, "lb_press", text);
 
