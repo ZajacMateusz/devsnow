@@ -339,7 +339,8 @@ int gps_read_all(char *gps_source, device_data *dev){
                 first_sentence= offset= 1;
             }
             if( first_sentence ){
-                //gps_print_sentence(sentence);
+		/* output sentence to console for debugging */
+                gps_print_sentence(sentence);
                 gps_position_data_update(sentence, dev);
             }         
         }
