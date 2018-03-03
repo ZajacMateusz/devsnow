@@ -57,14 +57,14 @@ void save_log_to_file(device_data * device){
     
     if( access( src, F_OK ) == -1 ) {
         fp = fopen(src, "a");
-        fprintf(fp, "time\tlatitude\tlongitude\taltitude\tspeed\tsnow_depth\ttemperature\thumidity\tpressure\n");
+        fprintf(fp, "time\tlatitude\tlongitude\taltitude\tspeed\tsnow_depth\ttemperature\thumidity\tpressure\trotate_1\trotate_2\n");
         fclose(fp);
     } 
     
     fp = fopen(src, "a");
-    fprintf(fp, "%s\t%f\t%f\t%f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\n", device->position->time, device->position->lat, 
+    fprintf(fp, "%s\t%f\t%f\t%f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\n", device->position->time, device->position->lat, 
         device->position->lon, device->position->alt, device->position->speed, device->snow_depth, 
-        device->temperature, device->humidity, device->pressure );
+        device->temperature, device->humidity, device->pressure, device->imu_data->r, device->imu_data->p );
 
     /*fprintf(fp, "%s\t%f\t%f\t%f\t%.2f\t%.2f\n", device->position->time, device->position->lat, 
         device->position->lon, device->position->alt, device->position->speed, device->snow_depth );*/ // bez warunków atmosferycznych
@@ -129,6 +129,66 @@ ui_read_temp_and_hum(void){
 }
 
 
+static int
+read_imu_data(imu *imu_data, char *src_file){
+    
+    imu *imu_temp = malloc(sizeof(imu));
+    FILE *fptr;
+
+    if ((fptr = fopen(src_file,"r")) == NULL){
+       return 0;
+    }
+
+    char temp[100];
+    bool read_ok= false;
+
+    for(int i= 0; i< 8; ++i){
+        if(fscanf(fptr,"%s", temp) == EOF)
+            break;
+        switch(i){
+            case 0:
+                break;
+            case 1:
+                break;
+            case 2:
+                imu_temp->r= atof(temp);
+                break;
+            case 3:
+                imu_temp->p= atof(temp);
+                break;
+            case 4:
+                imu_temp->y= atof(temp);
+                break;
+            case 5:
+                imu_temp->m= atof(temp);
+                break; 
+        }
+        read_ok= true;
+    }
+
+    if(read_ok){
+        *imu_data= *imu_temp;
+        return 1;
+    } 
+    return 0;
+}
+
+static void
+calculate_imu_data( imu *imu_data, imu *imu_zero){
+    float r, p;
+    r= imu_data->r;
+    if(r< 0)
+        r= 360.0+ r;
+    r= (r- imu_zero->r)* -1;
+    if(r>-0.01 && r< 0.01)
+        r= 0.0;
+    imu_data->r= r;
+    p= imu_data->p;
+    p= (p- imu_zero->p)* -1;
+    if(p>-0.01 && p< 0.01)
+        p= 0.0;
+    imu_data->p= p;
+}
 
 /* ************  UI button function  ******************* */
 
@@ -237,6 +297,11 @@ timer_handler(void){
             if( sec % 5 == 2)
                 ui_read_temp_and_hum();
 
+            
+            read_imu_data(device->imu_data, IMU_LOG_SRC);
+            calculate_imu_data(device->imu_data, device->imu_zero);
+            
+            //printf("IMU_DATA: r:%.2f p:%.2f y:%.2f \n", device->imu_data->r , device->imu_data->p, device->imu_data->y);
             /* ************** GPS *************************** */
             int gps_read_status;
             gps_read_status= gps_read_all(GPS_SERIAL_SOURCE, device);
@@ -256,7 +321,7 @@ timer_handler(void){
                     ui_set_flag(GPS_ICON_FLAG);
                     ui_gps_icon_change( builder );
 
-                    //save_log_to_file(device);
+                    save_log_to_file(device);
 
                 }
             }
@@ -264,6 +329,7 @@ timer_handler(void){
                 ui_reset_flag(GPS_ICON_FLAG);
                 ui_gps_icon_change( builder );
             }
+            //printf("IMU_DATA: r:%.2f p:%.2f y:%.2f \n", device->imu_data->r , device->imu_data->p, device->imu_data->y);
             on_set_information(builder, device);
             break;
         }
@@ -292,6 +358,15 @@ main( int argc, char * argv[] ){
     device->temperature = 0;  
     device->snow_depth= 0.00;  
 
+    device->imu_data = malloc(sizeof(imu));
+    device->imu_data->r= 0;
+    device->imu_data->p= 0;
+    device->imu_data->y= 0;
+    device->imu_data->m= 0;
+
+    device->imu_zero = malloc(sizeof(imu));
+    read_imu_data(device->imu_zero, IMU_ZERO_LOG_SRC);
+
     GDateTime *date_time;    
     date_time = g_date_time_new_now_local();  
     sprintf(device->position->date, "%s", g_date_time_format(date_time, "%Y_%m_%d"));    
@@ -319,7 +394,6 @@ main( int argc, char * argv[] ){
 
     Cursor=gdk_cursor_new_for_display (display, GDK_BLANK_CURSOR);
     gdk_window_set_cursor((main_win),Cursor);
-    
 
     //GdkCursor* Cursor = gdk_cursor_new(GDK_BLANK_CURSOR);
    //gdk_cursor_new_for_display (display, GDK_BLANK_CURSOR);
