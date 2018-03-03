@@ -177,8 +177,6 @@ int gps_position_data_update(char *sentence, device_data *dev){
 	char line[200];
 	char c='a';
 	int i= 0;
-	char h[2], m[2], s[2];
-	int microseconds;
 	struct minmea_sentence_rmc frame_rmc;
 	struct minmea_sentence_gga frame_gga;
 
@@ -203,27 +201,15 @@ int gps_position_data_update(char *sentence, device_data *dev){
 			if (minmea_parse_gga(&frame_gga, line)) {
 				dev->position->alt = minmea_tofloat(&frame_gga.altitude);
 				dev->position->fix_quality = frame_gga.fix_quality;
-				microseconds = frame_gga.time.microseconds / 10000;
-				if (microseconds != 0) {
-					microseconds /= 10;
-				}
+				/* XXX don't know why, but need to divide ...*/
+				frame_gga.time.microseconds /= 10000;
 				/* strefa czasowa + 1 */
-				if (frame_gga.time.hours < 9) {
-					sprintf(h, "0%d", frame_gga.time.hours + 1);
-				} else {
-					sprintf(h, "%d", frame_gga.time.hours + 1);
-				}
-				if (frame_gga.time.minutes < 10) {
-					sprintf(m, "0%d", frame_gga.time.minutes);
-				} else {
-					sprintf(m, "%d", frame_gga.time.minutes);
-				}
-				if (frame_gga.time.seconds < 10) {
-					sprintf(s, "0%d", frame_gga.time.seconds);
-				} else {
-					sprintf(s, "%d", frame_gga.time.seconds);
-				}
-				sprintf(dev->position->time, "%s:%s:%s:%d0", h, m, s, microseconds );
+				frame_gga.time.hours += 1;
+				sprintf(dev->position->time, "%02i:%02i:%02i:%02i",
+					frame_gga.time.hours,
+					frame_gga.time.minutes,
+					frame_gga.time.seconds,
+					frame_gga.time.microseconds);
 			}
 			break;
 		}
