@@ -173,142 +173,66 @@ int gps_read_sentence(int serial_port, char *sentence, int offset_on){
 }
 
 int gps_position_data_update(char *sentence, device_data *dev){
-        
-    char line[200];
-    char c='a';
-    int i= 0;
-    while(c!='\n'){
-        c= *(sentence+i* sizeof(*sentence));
-        line[i++]= c;
-        if(c=='\n')
-            line[i]= '\0';
-    } 
-        
-    //printf("%s\r\n", line);
-    switch (minmea_sentence_id(line, false)) {
-        case MINMEA_SENTENCE_RMC: {
-            struct minmea_sentence_rmc frame;
-            if (minmea_parse_rmc(&frame, line)) {
-                dev->position->lat = minmea_tocoord(&frame.latitude);
-                dev->position->lon = minmea_tocoord(&frame.longitude);
-                dev->position->speed = minmea_tofloat(&frame.speed) * GPS_KNOTS_TO_KM_PER_H;
-                dev->position->course = minmea_tofloat(&frame.course);
-            }
-            break;
-        } 
-        case MINMEA_SENTENCE_GGA: {
-            struct minmea_sentence_gga frame;
-            if (minmea_parse_gga(&frame, line)) {
-                dev->position->alt= minmea_tofloat(&frame.altitude);
-                //dev->position->lat = minmea_tocoord(&frame.latitude);
-                //dev->position->lon = minmea_tocoord(&frame.longitude);
-                dev->position->fix_quality = frame.fix_quality;
-                int microseconds= frame.time.microseconds/10000;
-                if (microseconds!= 0)
-                    microseconds/= 10;
-                char h[2], m[2], s[2];
-                if(frame.time.hours< 9)
-                    sprintf(h, "0%d", frame.time.hours+1); // strefa czasowa +1h
-                else
-                    sprintf(h, "%d", frame.time.hours+ 1);
-                if(frame.time.minutes< 10)
-                    sprintf(m, "0%d", frame.time.minutes);
-                else
-                    sprintf(m, "%d", frame.time.minutes);
-                if(frame.time.seconds< 10)
-                    sprintf(s, "0%d", frame.time.seconds);
-                else
-                    sprintf(s, "%d", frame.time.seconds);
 
-                sprintf(dev->position->time , "%s:%s:%s:%d0", h, m, s, microseconds );
-            }
-        break; 
-        } 
-            /*
+	char line[200];
+	char c='a';
+	int i= 0;
+	char h[2], m[2], s[2];
+	int microseconds;
+	struct minmea_sentence_rmc frame;
+	struct minmea_sentence_gga frame;
 
-            case MINMEA_SENTENCE_GST: {
-                struct minmea_sentence_gst frame;
-                if (minmea_parse_gst(&frame, line)) {
-                    printf(INDENT_SPACES "$xxGST: raw latitude,longitude and altitude error deviation: (%d/%d,%d/%d,%d/%d)\r\n",
-                            frame.latitude_error_deviation.value, frame.latitude_error_deviation.scale,
-                            frame.longitude_error_deviation.value, frame.longitude_error_deviation.scale,
-                            frame.altitude_error_deviation.value, frame.altitude_error_deviation.scale);
-                    printf(INDENT_SPACES "$xxGST fixed point latitude,longitude and altitude error deviation"
-                           " scaled to one decimal place: (%d,%d,%d)\r\n",
-                            minmea_rescale(&frame.latitude_error_deviation, 10),
-                            minmea_rescale(&frame.longitude_error_deviation, 10),
-                            minmea_rescale(&frame.altitude_error_deviation, 10));
-                    printf(INDENT_SPACES "$xxGST floating point degree latitude, longitude and altitude error deviation: (%f,%f,%f)",
-                            minmea_tofloat(&frame.latitude_error_deviation),
-                            minmea_tofloat(&frame.longitude_error_deviation),
-                            minmea_tofloat(&frame.altitude_error_deviation));
-                }
-                else {
-                    printf(INDENT_SPACES "$xxGST sentence is not parsed\r\n");
-                }
-            } break;
-
-            case MINMEA_SENTENCE_GSV: {
-                struct minmea_sentence_gsv frame;
-                if (minmea_parse_gsv(&frame, line)) {
-                    printf(INDENT_SPACES "$xxGSV: message %d of %d\r\n", frame.msg_nr, frame.total_msgs);
-                    printf(INDENT_SPACES "$xxGSV: sattelites in view: %d\r\n", frame.total_sats);
-                    for (int i = 0; i < 4; i++)
-                        printf(INDENT_SPACES "$xxGSV: sat nr %d, elevation: %d, azimuth: %d, snr: %d dbm\r\n",
-                            frame.sats[i].nr,
-                            frame.sats[i].elevation,
-                            frame.sats[i].azimuth,
-                            frame.sats[i].snr);
-                }
-                else {
-                    printf(INDENT_SPACES "$xxGSV sentence is not parsed\r\n");
-                }
-            } break;
-
-            case MINMEA_SENTENCE_VTG: {
-               struct minmea_sentence_vtg frame;
-               if (minmea_parse_vtg(&frame, line)) {
-                    printf(INDENT_SPACES "$xxVTG: true track degrees = %f\r\n",
-                           minmea_tofloat(&frame.true_track_degrees));
-                    printf(INDENT_SPACES "        magnetic track degrees = %f\r\n",
-                           minmea_tofloat(&frame.magnetic_track_degrees));
-                    printf(INDENT_SPACES "        speed knots = %f\r\n",
-                            minmea_tofloat(&frame.speed_knots));
-                    printf(INDENT_SPACES "        speed kph = %f\r\n",
-                            minmea_tofloat(&frame.speed_kph));
-               }
-               else {
-                    printf(INDENT_SPACES "$xxVTG sentence is not parsed\r\n");
-               }
-            } break;
-
-            case MINMEA_SENTENCE_ZDA: {
-                struct minmea_sentence_zda frame;
-                if (minmea_parse_zda(&frame, line)) {
-                    printf(INDENT_SPACES "$xxZDA: %d:%d:%d %02d.%02d.%d UTC%+03d:%02d\r\n",
-                           frame.time.hours,
-                           frame.time.minutes,
-                           frame.time.seconds,
-                           frame.date.day,
-                           frame.date.month,
-                           frame.date.year,
-                           frame.hour_offset,
-                           frame.minute_offset);
-                }
-                else {
-                    printf(INDENT_SPACES "$xxZDA sentence is not parsed\r\n");
-                }
-            } break;
-
-            case MINMEA_INVALID: {
-                printf(INDENT_SPACES "$xxxxx sentence is not valid\r\n");
-            } break;
-            */
-            default: {
-                //printf(INDENT_SPACES "$xxxxx sentence is not parsed\r\n");
-            } break;
-        }
-        return 0;
+	while (c != '\n') {
+	c = *(sentence + i * sizeof(*sentence));
+	line[i++] = c;
+	if (c == '\n')
+		line[i] = '\0';
+	}
+	switch (minmea_sentence_id(line, false)) {
+		case MINMEA_SENTENCE_RMC: {
+			if (minmea_parse_rmc(&frame, line)) {
+				dev->position->lat = minmea_tocoord(&frame.latitude);
+				dev->position->lon = minmea_tocoord(&frame.longitude);
+				dev->position->speed =
+					minmea_tofloat(&frame.speed) * GPS_KNOTS_TO_KM_PER_H;
+				dev->position->course = minmea_tofloat(&frame.course);
+			}
+			break;
+		}
+		case MINMEA_SENTENCE_GGA: {
+			if (minmea_parse_gga(&frame, line)) {
+				dev->position->alti = minmea_tofloat(&frame.altitude);
+				dev->position->fix_quality = frame.fix_quality;
+				microseconds = frame.time.microseconds / 10000;
+				if (microseconds != 0) {
+					microseconds /= 10;
+				}
+				/* strefa czasowa + 1 */
+				if (frame.time.hours < 9) {
+					sprintf(h, "0%d", frame.time.hours + 1);
+				} else {
+					sprintf(h, "%d", frame.time.hours + 1);
+				}
+				if (frame.time.minutes < 10) {
+					sprintf(m, "0%d", frame.time.minutes);
+				} else {
+					sprintf(m, "%d", frame.time.minutes);
+				}
+				if (frame.time.seconds < 10) {
+					sprintf(s, "0%d", frame.time.seconds);
+				} else {
+					sprintf(s, "%d", frame.time.seconds);
+				}
+				sprintf(dev->position->time, "%s:%s:%s:%d0", h, m, s, microseconds );
+			}
+			break;
+		}
+		default: {
+			/* do nothing */
+			break;
+		}
+	}
+	return 0;
 }
 
 int gps_read_all(char *gps_source, device_data *dev){
