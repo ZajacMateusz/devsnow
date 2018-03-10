@@ -24,7 +24,7 @@ mapviewer_CFLAGS = \
     $(OSMGPSMAP_CFLAGS)     \
     $(GTHREAD_CFLAGS)
 
-FILE_FLAG = src/def.h lib/gps_module.c src/gps_module.h lib/ui_library.c src/ui_library.h gps_module.o ui_library.o minmea.o
+FILE_FLAG = src/def.h src/gps_module.c src/gps_module.h src/ui_library.c src/ui_library.h gps_module.o ui_library.o minmea.o
 FILE_LINKER = gps_module.o ui_library.o minmea.o
 
 
