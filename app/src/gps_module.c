@@ -1,6 +1,6 @@
 
-#include "../src/gps_module.h"
-#include "../src/minmea.h"
+#include "gps_module.h"
+#include "minmea.h"
 
 #include <stdlib.h>
 #include <stdbool.h>

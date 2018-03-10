@@ -38,15 +38,15 @@ app: main.c $(FILE_FLAG)
 clean:
 	$(RM) app minmea.o gps_module.o ui_library.o src/*.gch
 
-minmea.o: lib/minmea.c src/minmea.h
-	$(CC) lib/minmea.c src/minmea.h -c -Wall -pedantic
+minmea.o: src/minmea.c src/minmea.h
+	$(CC) src/minmea.c src/minmea.h -c -Wall -pedantic
 
-gps_module.o: lib/gps_module.c src/gps_module.h src/minmea.h 
-	$(CC) -c  lib/gps_module.c src/gps_module.h $(GLIB_CFLAGS)
+gps_module.o: src/gps_module.c src/gps_module.h src/minmea.h 
+	$(CC) -c  src/gps_module.c src/gps_module.h $(GLIB_CFLAGS)
 
-ui_library.o: lib/ui_library.c src/ui_library.h src/gps_module.h 
-	$(CC) -c $(GTK_CFLAGS) $(GTK_LIBS) lib/ui_library.c src/ui_library.h 
+ui_library.o: src/ui_library.c src/ui_library.h src/gps_module.h 
+	$(CC) -c $(GTK_CFLAGS) $(GTK_LIBS) src/ui_library.c src/ui_library.h 
 
 
 #gps.o: src/gps_library.c src/gps_library.h src/minmea.c src/minmea.h
-#	$(CC) -c -Wall -pedantic src/gps_library.c src/gps_library.h src/minmea.c src/minmea.h
+#	$(CC) -c -Wall -pedantic src/gps_libra:ry.c src/gps_library.h src/minmea.c src/minmea.h

@@ -1,6 +1,6 @@
 
-#include "../src/ui_library.h"
-#include "../src/minmea.h"
+#include "ui_library.h"
+#include "minmea.h"
 
 #include <stdlib.h>
 #include <stdio.h>

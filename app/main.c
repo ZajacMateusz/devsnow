@@ -346,7 +346,6 @@ main(int argc, char * argv[]){
 	device = malloc(sizeof(device_data));
 	device_data_init_null(device);
 
-
 	GDateTime *date_time;
 	date_time = g_date_time_new_now_local();
 	sprintf(device->position->date, "%s", g_date_time_format(date_time, "%Y_%m_%d"));
