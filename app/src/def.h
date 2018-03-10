@@ -51,6 +51,8 @@ typedef struct device_data{
 #define GPS_ICON_FLAG                   0x08
 #define SNOW_SENSOR_ICON_FLAG           0x10
 #define GPS_MORE_INFORMATION_BOX_FLAG   0x20
+#define UI_APP_MAIN_WINDOW		"main_window"
+#define UI_APP_START_WINDOW		"start_window"
 
 /* ******************* icon sources ******************* */
 

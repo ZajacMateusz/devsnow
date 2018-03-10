@@ -332,7 +332,6 @@ device_data_init_null(device_data *dev){
 	dev->imu_data->y = 0;
 	dev->imu_data->m = 0;
 	dev->imu_zero = malloc(sizeof(imu));
-	read_imu_data(device->imu_zero, IMU_ZERO_LOG_SRC);
 }
 
 /* ************** main *************************** */
@@ -347,6 +346,8 @@ main(int argc, char * argv[]){
 	device = malloc(sizeof(device_data));
 	device_data_init_null(device);
 
+
+	GDateTime *date_time;
 	date_time = g_date_time_new_now_local();
 	sprintf(device->position->date, "%s", g_date_time_format(date_time, "%Y_%m_%d"));
 
@@ -355,10 +356,10 @@ main(int argc, char * argv[]){
 	builder = gtk_builder_new();
 	create_builder(builder);
 
-	main_window = create_window(builder, "main_window");
+	main_window = create_window(builder, UI_APP_MAIN_WINDOW);
 
 	GtkWidget * start_window;
-	start_window = GTK_WIDGET( gtk_builder_get_object( builder, "start_window" ));
+	start_window = GTK_WIDGET( gtk_builder_get_object( builder, UI_APP_START_WINDOW));
 
 	gtk_window_fullscreen(GTK_WINDOW(start_window));
 
