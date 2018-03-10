@@ -39,6 +39,7 @@ OsmGpsMapLayer *osd;
 int rc;
 struct timeval tv;
 
+device_data *device;
 /* ******************* function  ******************* */
 
 static
@@ -314,6 +315,26 @@ timer_handler(void){
 	return TRUE;
 }
 
+static void 
+device_data_init_null(device_data *dev){
+
+	dev->position = malloc(sizeof(nmea));
+	dev->position->lat = 0;
+	dev->position->lon = 0;
+	dev->position->speed = 0;
+	dev->position->course = 0;
+	dev->position->alt = 0;
+	dev->temperature = 0;
+	dev->snow_depth = 0.00;
+	dev->imu_data = malloc(sizeof(imu));
+	dev->imu_data->r = 0;
+	dev->imu_data->p = 0;
+	dev->imu_data->y = 0;
+	dev->imu_data->m = 0;
+	dev->imu_zero = malloc(sizeof(imu));
+	read_imu_data(device->imu_zero, IMU_ZERO_LOG_SRC);
+}
+
 /* ************** main *************************** */
 
 int
@@ -324,25 +345,8 @@ main(int argc, char * argv[]){
 	f_progress->message = "none";
 
 	device = malloc(sizeof(device_data));
-	device->position = malloc(sizeof(nmea));
-	device->position->lat = 0;
-	device->position->lon = 0;
-	device->position->speed = 0;
-	device->position->course = 0;
-	device->position->alt = 0;
-	device->temperature = 0;
-	device->snow_depth = 0.00;
+	device_data_init_null(device);
 
-	device->imu_data = malloc(sizeof(imu));
-	device->imu_data->r = 0;
-	device->imu_data->p = 0;
-	device->imu_data->y = 0;
-	device->imu_data->m = 0;
-
-	device->imu_zero = malloc(sizeof(imu));
-	read_imu_data(device->imu_zero, IMU_ZERO_LOG_SRC);
-
-	GDateTime *date_time;
 	date_time = g_date_time_new_now_local();
 	sprintf(device->position->date, "%s", g_date_time_format(date_time, "%Y_%m_%d"));
 

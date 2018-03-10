@@ -37,10 +37,6 @@ typedef struct device_data{
      float pressure;
 }device_data;
 
-
-
-device_data *device; 
-
 /* ******************* GUI interface ******************* */
 
 #define UI_FILE                         "/home/pi/app/app/src/view.ui"
