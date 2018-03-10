@@ -193,6 +193,5 @@ void ui_show_interface_item(GtkBuilder * builder){
 }
 
 void ui_init(GtkBuilder * builder){
-
     ui_show_interface_item(builder);
 }

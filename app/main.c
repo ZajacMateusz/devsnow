@@ -284,8 +284,7 @@ timer_handler(void){
 			calculate_imu_data(device->imu_data, device->imu_zero);
 
 			/* ************** GPS *************************** */
-			int gps_read_status;
-			gps_read_status = gps_read_all(GPS_SERIAL_SOURCE, device);
+			gps_read_all(GPS_SERIAL_SOURCE, device);
 
 			if(device->position->fix_quality >= 1){
 				if(device->position->lat != 0 && device->position->lon != 0){
@@ -332,6 +331,11 @@ device_data_init_null(device_data *dev){
 	dev->imu_data->y = 0;
 	dev->imu_data->m = 0;
 	dev->imu_zero = malloc(sizeof(imu));
+}
+
+static void
+ui_create_interface(GtkBuilder * builder){
+
 }
 
 /* ************** main *************************** */
