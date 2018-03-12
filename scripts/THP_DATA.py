@@ -20,7 +20,6 @@ def set_path():
 
     FILE_NAME = "THP_DATA_%s" % time.strftime("%Y_%m_%d",time.localtime())
 
-
     while not os.path.exists(LOGS_DIRECTORY):
         time.sleep(1)
 
@@ -136,8 +135,6 @@ while True:
     read_ok = False
 
     while not read_ok:
-        while not os.path.exists(LOGS_DIRECTORY):
-            time.sleep(1)
         humidity, temperature = Adafruit_DHT.read_retry(Adafruit_DHT.DHT22, 25)
         humidity_2, temperature_2 = Adafruit_DHT.read_retry(Adafruit_DHT.DHT22, 23)
         pressure= get_pressure()
@@ -152,11 +149,9 @@ while True:
         a= float(time.strftime("%S",time.localtime())) % 5
         while a != 0:
             a= float(time.strftime("%S",time.localtime())) % 5
+        while not os.path.exists(LOGS_DIRECTORY):
+            time.sleep(1)
         logging.info(info)
-
-        #if os.path.exists(LOGS_DIRECTORY + 'THP_DATA_CURRENT.log'):
-            #subprocess.call("rm "+ LOGS_DIRECTORY+ "THP_DATA_CURRENT.log ", shell=True)
         file = open(LOGS_DIRECTORY + "THP_DATA_CURRENT.log", 'w+')
-        #print(time.strftime("%Y-%m-%d %H:%M:%S,000",time.localtime())+ ' '+ info)
         file.write(time.strftime("%Y-%m-%d\t%H:%M:%S,000",time.localtime())+ '\t'+ info)
         file.close()
