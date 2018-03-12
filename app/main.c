@@ -25,6 +25,8 @@
 #include <termios.h>
 #include <sys/time.h>
 
+#include <sys/stat.h>
+
 /* ******************* variables **************************** */
 
 int init_module = 3;
@@ -45,23 +47,35 @@ struct functionProgress *f_progress;
 device_data * device;
 /* ******************* function  ******************* */
 
+static void
+print_error(char *message){
+
+	printf("\nERROR: %s\n\n", message);
+	gtk_main_quit();
+}
+
 static
 void save_log_to_file(device_data *device){
 
 	FILE *fp;
 	char src[200];
-	printf(src, "%sDEVICE_DATA_%s.log", DEVICE_DATA_LOG_SRC, device->position->date);
+	sprintf(src, "%sDEVICE_DATA_%s.log", DEVICE_DATA_LOG_SRC, device->position->date);
+	struct stat sb;
 
-	if (access(src, F_OK) == -1) {
+	if (stat(DEVICE_DATA_LOG_SRC, &sb) == 0 && S_ISDIR(sb.st_mode)){
+		if (access(src, F_OK) == -1) {
+			fp = fopen(src, "a");
+			fprintf(fp, "time\tlatitude\tlongitude\taltitude\tspeed\tsnow_depth\ttemperature\thumidity\tpressure\trotate_1\trotate_2\n");
+			fclose(fp);
+		}
 		fp = fopen(src, "a");
-		fprintf(fp, "time\tlatitude\tlongitude\taltitude\tspeed\tsnow_depth\ttemperature\thumidity\tpressure\trotate_1\trotate_2\n");
+		fprintf(fp, "%s\t%f\t%f\t%f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\n", device->position->time, device->position->lat,
+			device->position->lon, device->position->alt, device->position->speed, device->snow_depth, 
+			device->temperature, device->humidity, device->pressure, device->imu_data->r, device->imu_data->p );
 		fclose(fp);
+	} else {
+		print_error("Folder zapisu danych urządzenia nie istnieje!");
 	}
-	fp = fopen(src, "a");
-	fprintf(fp, "%s\t%f\t%f\t%f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\n", device->position->time, device->position->lat,
-		device->position->lon, device->position->alt, device->position->speed, device->snow_depth, 
-		device->temperature, device->humidity, device->pressure, device->imu_data->r, device->imu_data->p );
-	fclose(fp);
 }
 
 static int
@@ -106,6 +120,7 @@ ui_read_temp_and_hum(void){
 		read_ok = true;
 	}
 
+	fclose(fptr);
 	if (read_ok == 1){
 		device->temperature = tem;
 		device->humidity = hum;
@@ -153,6 +168,7 @@ read_imu_data(imu *imu_data, char *src_file){
 		read_ok = true;
 	}
 
+	fclose(fptr);
 	if (read_ok == 1){
 		*imu_data = *imu_temp;
 		return 1;
@@ -190,12 +206,7 @@ ui_map_set_center(void){
 	osm_gps_map_set_center_and_zoom (map, device->position->lat, device->position->lon, 20);
 }
 
-static void
-print_error(char *message){
 
-	printf("\nERROR: %s\n\n", message);
-	gtk_main_quit();
-}
 
 
 static bool
@@ -313,7 +324,7 @@ timer_handler(void){
 
 static void 
 device_data_init_null(device_data *dev){
-
+	
 	dev->position = malloc(sizeof(nmea));
 	dev->position->lat = 0;
 	dev->position->lon = 0;
@@ -332,6 +343,21 @@ device_data_init_null(device_data *dev){
 
 static void
 ui_signal_connect(GtkBuilder *builder){
+
+	/* tyying to fix the error 'gtk_widget_get_can_default ...'
+	GtkWidget *button;
+	
+	button = GTK_WIDGET( gtk_builder_get_object( builder, "bt_set_center"));
+	gtk_widget_set_can_default ( button , FALSE );
+	button = GTK_WIDGET( gtk_builder_get_object( builder,"bt_show_snow_depth" ));
+	gtk_widget_set_can_default ( button , FALSE );
+	button = GTK_WIDGET( gtk_builder_get_object( builder,"bt_show_coordinates" ));
+	gtk_widget_set_can_default ( button , FALSE );
+	button = GTK_WIDGET( gtk_builder_get_object( builder,"bt_show_gps_more_information" ));
+	gtk_widget_set_can_default ( button , FALSE );
+	button = GTK_WIDGET( gtk_builder_get_object( builder,"bt_view_menu" ));
+	gtk_widget_set_can_default ( button , FALSE );
+	*/
 
 	g_signal_connect(gtk_builder_get_object(builder, "bt_set_center"), "clicked", G_CALLBACK(ui_map_set_center), builder);
 	g_signal_connect(gtk_builder_get_object(builder, "bt_show_snow_depth"), "clicked", G_CALLBACK(ui_on_view_snow_depth), builder);
