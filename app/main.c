@@ -45,7 +45,8 @@ int function_init_counter = 0;
 struct functionProgress *f_progress;
 
 device_data * device;
-/* ******************* function  ******************* */
+
+/* ******************* functions  ******************* */
 
 static void
 print_error(char *message){
@@ -130,7 +131,6 @@ ui_read_temp_and_hum(void){
 	return 0;
 }
 
-
 static int
 read_imu_data(imu *imu_data, char *src_file){
 
@@ -197,17 +197,13 @@ calculate_imu_data(imu *imu_data, imu *imu_zero){
 	imu_data->p = p;
 }
 
-/* ************  UI button function  ******************* */
-
+/* ************  UI button functions  ******************* */
 
 static void
 ui_map_set_center(void){
 
 	osm_gps_map_set_center_and_zoom (map, device->position->lat, device->position->lon, 20);
 }
-
-
-
 
 static bool
 timer_handler(void){
@@ -324,7 +320,7 @@ timer_handler(void){
 
 static void 
 device_data_init_null(device_data *dev){
-	
+
 	dev->position = malloc(sizeof(nmea));
 	dev->position->lat = 0;
 	dev->position->lon = 0;
@@ -346,7 +342,7 @@ ui_signal_connect(GtkBuilder *builder){
 
 	/* tyying to fix the error 'gtk_widget_get_can_default ...'
 	GtkWidget *button;
-	
+
 	button = GTK_WIDGET( gtk_builder_get_object( builder, "bt_set_center"));
 	gtk_widget_set_can_default ( button , FALSE );
 	button = GTK_WIDGET( gtk_builder_get_object( builder,"bt_show_snow_depth" ));
