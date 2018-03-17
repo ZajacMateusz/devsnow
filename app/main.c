@@ -27,24 +27,18 @@
 
 #include <sys/stat.h>
 
-/* ******************* variables **************************** */
-
-int init_module = 3;
-struct timeval  function_start;
+/* ******************* global variables **************************** */
 
 GtkBuilder *builder;
 GtkWidget *main_window;
 GtkWidget *map_w;
 OsmGpsMap *map;
 OsmGpsMapLayer *osd;
+device_data * device;
 
 int rc;
+int turn_first_timer = 0;
 struct timeval tv;
-
-int function_init_counter = 0;
-struct functionProgress *f_progress;
-
-device_data * device;
 
 /* ******************* functions  ******************* */
 
@@ -56,10 +50,10 @@ print_error(char *message){
 }
 
 static
-void save_log_to_file(device_data *device){
+int save_log_to_file(device_data *device){
 
 	FILE *fp;
-	char src[200];
+	char *src= malloc(strlen(DEVICE_DATA_LOG_SRC)+strlen(device->position->date)+ strlen("DEVICE_DATA_.log"));
 	sprintf(src, "%sDEVICE_DATA_%s.log", DEVICE_DATA_LOG_SRC, device->position->date);
 	struct stat sb;
 
@@ -75,14 +69,16 @@ void save_log_to_file(device_data *device){
 			device->temperature, device->humidity, device->pressure, device->imu_data->r, device->imu_data->p );
 		fclose(fp);
 	} else {
-		print_error("Folder zapisu danych urządzenia nie istnieje!");
+		return 0;
 	}
+	return 1;
 }
 
 static int
 ui_read_temp_and_hum(void){
 
-	char temp[100], file_name[100];
+	char *temp= malloc(30);
+	char *file_name= malloc(strlen(ATMOSPHERIC_CONDITIONS_LOG_SRC));
 	float tem, hum, press;
 	FILE *fptr;
 	bool read_ok = false;
@@ -117,6 +113,9 @@ ui_read_temp_and_hum(void){
 			case 7:
 				press = atof(temp);
 				break;
+			defaut:
+				// Do nothing.
+				break;
 		}
 		read_ok = true;
 	}
@@ -136,7 +135,7 @@ read_imu_data(imu *imu_data, char *src_file){
 
 	imu *imu_temp = malloc(sizeof(imu));
 	FILE *fptr;
-	char temp[100];
+	char *temp= malloc(30);
 	bool read_ok= false;
 
 	if ((fptr = fopen(src_file,"r")) == NULL){
@@ -163,6 +162,9 @@ read_imu_data(imu *imu_data, char *src_file){
 				break;
 			case 5:
 				imu_temp->m = atof(temp);
+				break;
+			defaut:
+				// Do nothing.
 				break;
 		}
 		read_ok = true;
@@ -208,114 +210,81 @@ ui_map_set_center(void){
 static bool
 timer_handler(void){
 
-	int sec;
 	GDateTime *date_time;
-	GtkWidget *start_window;
-	GdkPixbuf * image;
+			
+	date_time = g_date_time_new_now_local();  
+	device->sys_time = g_date_time_format(date_time, "%H:%M:%S");
 
-	switch (function_init_counter){
-		case 0:
-			++function_init_counter;
-			break;
-		case 1:
-			if (f_progress->progress < 1.0){
-				if (gps_init(GPS_SERIAL_SOURCE, f_progress) == 1){
-					set_loading_module_progress(builder, (f_progress->progress + (float)function_init_counter - 1) / (float)init_module, f_progress->message);
-				}
-				else {
-					print_error(f_progress->message);
-					return false;
-				}
+	//Read temperature and others every 5 seconds with offset by one.
+	if (atoi(g_date_time_format(date_time, "%S")) % 5 == 1) {
+		ui_read_temp_and_hum();
+	}
+
+	if (read_imu_data(device->imu_data, IMU_LOG_SRC) != 1){
+		printf( "ERROR: Read IMU data.\n");
+	} else {
+		calculate_imu_data(device->imu_data, device->imu_zero);
+	}
+
+	/* ************** GPS *************************** */
+	if (gps_read_all(GPS_SERIAL_SOURCE, device) != 1){
+		printf("ERROR: Read all GPS sentence.\n");	
+	} else {
+
+		if (device->position->fix_quality >= 1){
+			if (device->position->lat != 0 && device->position->lon != 0){
+				osm_gps_map_image_remove_all (map);
+				osm_gps_map_gps_clear (map);
+				osm_gps_map_gps_add (map, device->position->lat, device->position->lon, device->position->course);
+				osm_gps_map_set_center_and_zoom ( map, device->position->lat, device->position->lon, 18);
+				ui_set_flag(GPS_ICON_FLAG);
+				ui_gps_icon_change( builder );
+				save_log_to_file(device);
 			}
-			else {
-				++function_init_counter;
+		} else {
+			ui_reset_flag(GPS_ICON_FLAG);
+			ui_gps_icon_change( builder );
+		}
+	}
+
+	on_set_information(builder, device);
+
+	if (turn_first_timer == 2  && device->position->fix_quality >= 1){  // Init ok and gps position is ok
+		GtkWidget *start_window;
+		start_window = GTK_WIDGET( gtk_builder_get_object(builder, "start_window" ));
+		gtk_widget_destroy(GTK_WIDGET(start_window));
+		turn_first_timer = 0;
+	}
+
+	return TRUE;
+}
+
+static bool
+timer_handler_init(void){
+
+	switch (turn_first_timer){
+		case 0:
+			//First empty start to load gtk interface.
+			++turn_first_timer;
+			break;
+		case 1:	
+			//Initiation of the GPS module.
+			if(gps_init(GPS_SERIAL_SOURCE) == 1){
+				++turn_first_timer;
 			}
 			break;
 		case 2:
-			f_progress->message = "Oczekiwanie na ustalenie pozycji geograficznej";
-			f_progress->progress = 0.5;
-			set_loading_module_progress(builder, (f_progress->progress + (float)function_init_counter - 1) / (float)init_module, f_progress->message);
+			// Turn on timer_handler ( main loop ).
+			g_timeout_add(200, (GSourceFunc)timer_handler, builder);
+			// Turn off timer_handler_init. 
+			return false;
 
-			if (gps_read_all(GPS_SERIAL_SOURCE, device) == 1){
-				if (device->position->fix_quality >= 1){
-					if(device->position->lat != 0 && device->position->lon != 0){
-						osm_gps_map_set_center_and_zoom (map, device->position->lat, device->position->lon, 20);
-					}
-					f_progress->progress = 0.0;
-					++function_init_counter;
-				}
-			}
-			else { 
-				f_progress->progress = 0;
-				--function_init_counter;
-			}
 			break;
-		case 3: 
-			f_progress->message = "Odczyt danych z czujników";
-			set_loading_module_progress(builder, (f_progress->progress + (float)function_init_counter - 1) / (float)init_module, f_progress->message);
-			if (f_progress->progress < 1.0){
-				date_time = g_date_time_new_now_local();                        // get local time
-				device->sys_time = g_date_time_format(date_time, "%H:%M:%S");
-				sec = atof(g_date_time_format(date_time, "%S"));
-
-				if(sec % 5 == 2){
-					ui_read_temp_and_hum();
-					f_progress->progress = 1.0;
-					set_loading_module_progress(builder, (f_progress->progress + (float)function_init_counter - 1) / (float)init_module, f_progress->message);
-				}
-			}
-			else{
-				on_set_information(builder, device);
-				++function_init_counter;
-			}
+		default:
+		       	// Do nothing.
 			break;
-		case 4:
-			f_progress->message = "Konfiguracja interfejsu";
-			set_loading_module_progress(builder, (f_progress->progress + (float)function_init_counter - 1) / (float)init_module, f_progress->message);
-			start_window = GTK_WIDGET( gtk_builder_get_object(builder, "start_window" ));
-			gtk_widget_destroy(GTK_WIDGET(start_window));
-			++function_init_counter;
-			break;
-		case 5:
-		{
-			/* ************** THP DATA *************************** */
-			date_time = g_date_time_new_now_local();                        // get local time
-			device->sys_time = g_date_time_format(date_time, "%H:%M:%S");
-
-			sec = atof(g_date_time_format(date_time, "%S"));
-
-			if (sec % 5 == 2)
-				ui_read_temp_and_hum();
-
-			read_imu_data(device->imu_data, IMU_LOG_SRC);
-			calculate_imu_data(device->imu_data, device->imu_zero);
-
-			/* ************** GPS *************************** */
-			gps_read_all(GPS_SERIAL_SOURCE, device);
-
-			if (device->position->fix_quality >= 1){
-				if (device->position->lat != 0 && device->position->lon != 0){
-					osm_gps_map_image_remove_all (map);
-					image = gdk_pixbuf_new_from_file (DEVICE_MAP_MARKER_SRC, NULL);
-					if (image != NULL){
-						osm_gps_map_gps_clear (map);
-						osm_gps_map_gps_add (map, device->position->lat, device->position->lon, device->position->course);
-					}
-					osm_gps_map_set_center_and_zoom ( map, device->position->lat, device->position->lon, 18);
-					ui_set_flag(GPS_ICON_FLAG);
-					ui_gps_icon_change( builder );
-					save_log_to_file(device);
-				}
-			}
-			else{
-				ui_reset_flag(GPS_ICON_FLAG);
-				ui_gps_icon_change( builder );
-			}
-			on_set_information(builder, device);
-			break;
-		}
-	}
-	return TRUE;
+	}	
+	return true;
 }
 
 static void 
@@ -335,25 +304,14 @@ device_data_init_null(device_data *dev){
 	dev->imu_data->y = 0;
 	dev->imu_data->m = 0;
 	dev->imu_zero = malloc(sizeof(imu));
+	if (read_imu_data(dev->imu_zero, IMU_ZERO_LOG_SRC) != 1){
+		// Error while reading the zero position for imu from the file.
+		print_error( "Read from the IMU zero config." );		
+	};
 }
 
 static void
 ui_signal_connect(GtkBuilder *builder){
-
-	/* tyying to fix the error 'gtk_widget_get_can_default ...'
-	GtkWidget *button;
-
-	button = GTK_WIDGET( gtk_builder_get_object( builder, "bt_set_center"));
-	gtk_widget_set_can_default ( button , FALSE );
-	button = GTK_WIDGET( gtk_builder_get_object( builder,"bt_show_snow_depth" ));
-	gtk_widget_set_can_default ( button , FALSE );
-	button = GTK_WIDGET( gtk_builder_get_object( builder,"bt_show_coordinates" ));
-	gtk_widget_set_can_default ( button , FALSE );
-	button = GTK_WIDGET( gtk_builder_get_object( builder,"bt_show_gps_more_information" ));
-	gtk_widget_set_can_default ( button , FALSE );
-	button = GTK_WIDGET( gtk_builder_get_object( builder,"bt_view_menu" ));
-	gtk_widget_set_can_default ( button , FALSE );
-	*/
 
 	g_signal_connect(gtk_builder_get_object(builder, "bt_set_center"), "clicked", G_CALLBACK(ui_map_set_center), builder);
 	g_signal_connect(gtk_builder_get_object(builder, "bt_show_snow_depth"), "clicked", G_CALLBACK(ui_on_view_snow_depth), builder);
@@ -368,9 +326,6 @@ ui_signal_connect(GtkBuilder *builder){
 int
 main(int argc, char * argv[]){
 
-	f_progress = malloc(sizeof(struct functionProgress));
-	f_progress->progress = 0.0;
-	f_progress->message = "none";
 	GDateTime *date_time;
 	GdkWindow* main_win;
 	GtkWidget * start_window;
@@ -393,7 +348,7 @@ main(int argc, char * argv[]){
 	create_builder(builder);
 	main_window = create_window(builder, UI_APP_MAIN_WINDOW);
 	start_window = GTK_WIDGET( gtk_builder_get_object( builder, UI_APP_START_WINDOW));
-	gtk_window_fullscreen(GTK_WINDOW(start_window));
+	//gtk_window_fullscreen(GTK_WINDOW(start_window));
 	screen = gdk_screen_get_default();
 	display = gdk_screen_get_display(screen);
 	main_win = gtk_widget_get_window((main_window));
@@ -425,7 +380,7 @@ main(int argc, char * argv[]){
 	ui_signal_connect(builder);
 	
 	/* ****************** main and timer function  *********************** */
-	g_timeout_add(200, (GSourceFunc)timer_handler, builder);
+	g_timeout_add(1000, (GSourceFunc)timer_handler_init, builder);
 	gtk_main();
 
 	return 0;

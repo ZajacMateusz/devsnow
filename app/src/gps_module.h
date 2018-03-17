@@ -18,19 +18,12 @@ extern "C" {
 #include <errno.h>
 #include <glib.h>
 
-struct functionProgress{
-    float progress;
-    char *message;
-    struct timeval start_time;
-    int error_code;
-};
-
 #define GPS_SET_BAUDRATE_115200		"$PMTK251,115200*1F\r\n"
 #define GPS_SET_UPDATERATE_5HZ		"$PMTK220,200*2C\r\n"
+#define GPS_SET_UPDATERATE_5H_REPLY	"$PMTK,251,2*37\r\n"
+#define CHAR_TIME_9600			10 / 9600
 #define GPS_KNOTS_TO_KM_PER_H		1.852
-
-
-bool time_delay(struct timeval  time_start, float delay_in_sec);
+#define MAX_LENGTH_NMEA_SENTENCE	200
 
 /**
 * Open the serial port connection.
@@ -46,15 +39,9 @@ int gps_set_interface_attribs (int serial_port, int speed, int parity);
 
 /**
 * Set the gps baudrate and update rate.
-  
-  ERROR_CODE
-  0 - ok
-  1 - Błąd otwarcia portu szeregowego modułu GPS
 */
 
-int gps_init( char *gps_source, struct functionProgress *f_progress);
-
-
+int gps_init(char *gps_source);
 
 /**
 * Print NMEA raw sentence to the console.

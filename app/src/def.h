@@ -2,48 +2,59 @@
 #define DEF_H
 
 /**
-* Struct and variables
+* IMU data struct. 
 */
-
-typedef struct _nmea{
-    char time[50];      /**< Time - hh:mm:ss:ss */
-    float  lat;        /**< Latitude in NDEG - [degree][min].[sec/60] */
-    char    ns;         /**< [N]orth or [S]outh */
-    float  lon;        /**< Longitude in NDEG - [degree][min].[sec/60] */
-    char    ew;         /**< [E]ast or [W]est */
-    float speed;
-    float course;
-    float alt;
-    char date[100];
-    int fix_quality;
-}nmea;
 
 typedef struct _imu
 {
-    float r;
-    float p;
-    float y;
-    float m;
+	float m;
+	float p;
+	float r;
+	float y;
 }imu;
 
+/**
+* GPS data struct. 
+*/
+
+
+typedef struct _nmea{
+	char date[100];
+	char ew; 
+	char ns; 
+	char time[50];  
+	float alt;
+	float course;
+	float lat;   
+	float lon;
+	float speed;
+	int fix_quality;
+}nmea;
+
+/**
+* Device data struct. 
+*/
+
 typedef struct device_data{
-     nmea *position;
-     imu *imu_data;
-     imu *imu_zero;
-     float snow_depth;
-     char *sys_time;
-     float temperature;
-     float humidity;
-     float pressure;
+	char *sys_time;
+	float humidity;
+	float pressure;
+	float snow_depth;
+	float temperature;
+	imu *imu_data;
+	imu *imu_zero;
+	nmea *position;
 }device_data;
 
-/* ******************* GUI interface ******************* */
+/**
+*  GUI interface. 
+*/
 
+#define COORDINATES_BOX_SRC             "bt_coordinates"
+#define GPS_MORE_INFORMATION_BOX_SRC    "bt_gps_more_information"
 #define UI_FILE                         "/home/pi/app/app/src/view.ui"
 #define VIEW_MENU_SRC                   "box_view_menu"
-#define COORDINATES_BOX_SRC             "bt_coordinates"
 #define WEATHER_CONDITIONS_BOX_SRC      "bt_weater_conditions"
-#define GPS_MORE_INFORMATION_BOX_SRC    "bt_gps_more_information"
 
 #define VIEW_MENU_FLAG                  0x01
 #define COORDINATES_BOX_FLAG            0x02
@@ -54,24 +65,26 @@ typedef struct device_data{
 #define UI_APP_MAIN_WINDOW		"main_window"
 #define UI_APP_START_WINDOW		"start_window"
 
-/* ******************* icon sources ******************* */
+/** 
+* Icon sources. 
+*/
 
+#define DEVICE_MAP_MARKER_SRC           "/home/pi/app/app/img/device_marker.png"
 #define GPS_ICON_ON_SRC                 "/home/pi/app/app/img/gps_icon_ok.png"
 #define GPS_ICON_OFF_SRC                "/home/pi/app/app/img/gps_icon_no.png"
 #define SNOW_SENSOR_ICON_ON_SRC         "/home/pi/app/app/img/snow_sensor_icon_ok.png"
 #define SNOW_SENSOR_ICON_OFF_SRC        "/home/pi/app/app/img/snow_sensor_icon_no.png"
-#define DEVICE_MAP_MARKER_SRC           "/home/pi/app/app/img/device_marker.png"
-#define START_BACKGROUND_SRC           "/home/pi/app/app/img/start_background.png"
+#define START_BACKGROUND_SRC		"/home/pi/app/app/img/start_background.png"
 
-
-/* ***************** GPS ***************************** */
-
-#define GPS_SERIAL_SOURCE      			"/dev/ttyS0" 
-#define INDENT_SPACES          			"  " 
+/**
+* GPS. 
+*/
 
 #define ATMOSPHERIC_CONDITIONS_LOG_SRC	"/media/pi/DATA/logs/thp_data/THP_DATA_CURRENT.log"
+#define DEVICE_DATA_LOG_SRC		"/media/pi/DATA/logs/device_data/"
+#define GPS_SERIAL_SOURCE      		"/dev/ttyS0" 
+#define INDENT_SPACES			"  " 
 #define IMU_LOG_SRC                     "/media/pi/DATA/logs/imu_data/IMU_DATA_CURRENT.log"
 #define IMU_ZERO_LOG_SRC                "/media/pi/DATA/logs/imu_data/IMU_DATA_ZERO.log"
-#define DEVICE_DATA_LOG_SRC				"/media/pi/DATA/logs/device_data/"
 
 #endif
