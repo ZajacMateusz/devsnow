@@ -1,0 +1,8 @@
+*.a
+*.o
+app/app
+app/maps/
+app/\
+app/temp/
+var/
+app/app/core
