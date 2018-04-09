@@ -1,37 +1,131 @@
 #!/usr/bin/python
-# Copyright (c) 2014 Adafruit Industries
-# Author: Tony DiCola
+# Copyright (c) 2018 Bartlomiej Sieka
+# Author: Mateusz Zajac
 
 import sys
 import Adafruit_DHT
 import time
-import logging
 import smbus
 import os
 import subprocess
 
-time.sleep(3)
+#For all scripts and program
+MAINLOG_PATH = "/home/pi/app/var/mainlog"
+STORAGE_PATH = "/media/pi/DATA"
+LOGS_MAIN_DIRECTORY = "logs"
+BACKUP_DIRECTORY = "backup"
+LOG_EX = ".log"
+LOG_EX_BACKUP = "_BACKUP.log"
+LED_COMMAND = "python /home/pi/app/scripts/LED.py" 
 
-#subprocess.call("python /home/pi/app/scripts/LED.py RED OFF" , shell=True)
+#Only for this script
+SCRIPT_NAME = "THP_DATA"
+LOGS_DIRECTORY = "thp_data"
+CURRENT_LOG_NAME = "THP_DATA_CURRENT"
+DHT_IN_PIN = 25
+DHT_OUT_PIN = 23
+LOG_NAME = ""
+LOGS_PATH = ""
 
-LOGS_DIRECTORY = "/media/pi/DATA/logs/thp_data/"
+logging_on = False
+waiting_on = False
+sensor_error = False
+
+def write_message(MESSAGE, LABEL_NAME):
+    #label name ( INFO, ERROR )
+    
+    try:
+        file = open(MAINLOG_PATH, 'a+')
+        if file is None:
+            return False
+        INFO = " {0}: [{1}]\t{2}\n".format(SCRIPT_NAME, LABEL_NAME, MESSAGE)
+        file.write(time.strftime("%G-%m-%d %H:%M:%S",time.localtime()) + INFO)
+        file.close()
+    except IOError:
+        return False
+    return True
+
+def write_info(MESSAGE):
+    write_message(MESSAGE, "INFO")
+
+def write_error(MESSAGE):
+    write_message(MESSAGE, "ERROR")
 
 def set_path():
 
-    FILE_NAME = "THP_DATA_%s" % time.strftime("%Y_%m_%d",time.localtime())
+    global LOG_NAME
+    global LOGS_PATH
+    global logging_on
+    global waiting_on
+    USB_error = False
 
-    while not os.path.exists(LOGS_DIRECTORY):
-        time.sleep(1)
+    try:
+        file = open(STORAGE_PATH + "/info_file", 'r')
+        if not file is None:
+            file.close()
+    except IOError:
+        USB_error = True
+    
+    if not os.path.exists(STORAGE_PATH) or USB_error:
+        if logging_on:
+            write_error("USB storage was unplugged.")
+            write_error("STOP logging.")
+            logging_on = False
+        if not waiting_on:
+            write_info("Waiting for the USB storage to be connected.")
+            waiting_on = True
+            subprocess.call("{0} RED ON ".format(LED_COMMAND),  shell=True)
+        return False
+    
+    if waiting_on:
+        waiting_on = False
+        subprocess.call("{0} RED OFF ".format(LED_COMMAND),  shell=True)
 
-    if not os.path.exists(LOGS_DIRECTORY + FILE_NAME + ".log"):
-        file = open(LOGS_DIRECTORY + FILE_NAME + ".log", 'w+')
-        #file.close()
+    if not os.path.exists("{0}/{1}".format(STORAGE_PATH, LOGS_MAIN_DIRECTORY)):
+        time.sleep(0.5) #when usb 
+        write_info("Main logs directory was created.")
+        subprocess.call("mkdir {0}/{1}".format(STORAGE_PATH, LOGS_MAIN_DIRECTORY) , shell=True)
+        if not os.path.exists("{0}/{1}".format(STORAGE_PATH, LOGS_MAIN_DIRECTORY)):
+            return False
+
+    if not os.path.exists("{0}/{1}/{2}".format(STORAGE_PATH, LOGS_MAIN_DIRECTORY, LOGS_DIRECTORY)):
+        write_info("Thp data logs directory was created.")
+        subprocess.call("mkdir {0}/{1}/{2}".format(STORAGE_PATH, LOGS_MAIN_DIRECTORY, LOGS_DIRECTORY),  shell=True)
+        if not os.path.exists("{0}/{1}/{2}".format(STORAGE_PATH, LOGS_MAIN_DIRECTORY, LOGS_DIRECTORY)):
+            return False
+
+    if not os.path.exists("{0}/{1}/{2}/{3}".format(STORAGE_PATH, LOGS_MAIN_DIRECTORY, LOGS_DIRECTORY, BACKUP_DIRECTORY)):
+        write_info("Thp data logs backup directory was created.")
+        subprocess.call("mkdir {0}/{1}/{2}/{3}".format(STORAGE_PATH, LOGS_MAIN_DIRECTORY, LOGS_DIRECTORY, BACKUP_DIRECTORY),  shell=True)
+        if not os.path.exists("{0}/{1}/{2}/{3}".format(STORAGE_PATH, LOGS_MAIN_DIRECTORY, LOGS_DIRECTORY, BACKUP_DIRECTORY)):
+            return False
+
+    LOG_NAME = "THP_DATA_{0}".format(time.strftime("%Y_%m_%d",time.localtime()))
+    LOGS_PATH = "{0}/{1}/{2}".format(STORAGE_PATH, LOGS_MAIN_DIRECTORY, LOGS_DIRECTORY)
+
+    if os.path.exists("{0}/{1}{2}".format(LOGS_PATH, LOG_NAME, LOG_EX)):
+        if not logging_on:
+            write_info("Backup was created: {0}{1}".format(LOG_NAME, LOG_EX_BACKUP))
+            subprocess.call("cp {0}/{1}{2} {0}/{3}/{1}{4}".format(LOGS_PATH, LOG_NAME, LOG_EX, BACKUP_DIRECTORY, LOG_EX_BACKUP),  shell=True)
+
     else:
-        if not os.path.exists(LOGS_DIRECTORY + "backup"):
-            os.mkdir( LOGS_DIRECTORY + "backup", 0775);
-        subprocess.call("cp "+ LOGS_DIRECTORY + FILE_NAME+ ".log "+ LOGS_DIRECTORY+ "backup/_"+ FILE_NAME+ ".log " , shell=True)
+        try:
+            file = open("{0}/{1}{2}".format(LOGS_PATH, LOG_NAME, LOG_EX), 'w+')
+            if file is None:
+                return False
+            INFO = "DATE\tTIME\tTEMP_IN\tHUM_IN\tTEMP_OUT\tHUM_out\tPRESS\n"
+            file.write(INFO)
+            file.close()
+            write_info("New log file was created: {0}{1}".format(LOG_NAME, LOG_EX))
+        except IOError:
+            write_error("IOError: read only system.")
+            return False
 
-    logging.basicConfig(filename=LOGS_DIRECTORY + FILE_NAME + '.log', format='%(asctime)s %(message)s', level=logging.INFO)
+    if not logging_on:
+        write_info("START logging.")
+
+    logging_on= True
+    return True;
 
 def get_pressure():
     # Get I2C bus
@@ -119,39 +213,69 @@ def get_pressure():
     var1 = (dig_P9) * p * p / 2147483648.0
     var2 = p * (dig_P8) / 32768.0
     pressure = (p + (var1 + var2 + (dig_P7)) / 16.0) / 100
+
     return pressure
 
-
-# Un-comment the line below to convert the temperature to Fahrenheit.
-# temperature = temperature * 9/5.0 + 32
-
-# Note that sometimes you won't get a reading and
-# the results will be null (because Linux can't
-# guarantee the timing of calls to read the sensor).
-# If this happens try again!
+write_info("START script.")
+subprocess.call("{0} RED OFF ".format(LED_COMMAND),  shell=True)
+subprocess.call("{0} GREEN OFF ".format(LED_COMMAND),  shell=True)
 
 while True:
-    set_path()
-    read_ok = False
+    if not set_path():
+        time.sleep(1)
+    else:
+        read_ok = False
 
-    while not read_ok:
-        humidity, temperature = Adafruit_DHT.read_retry(Adafruit_DHT.DHT22, 25)
-        humidity_2, temperature_2 = Adafruit_DHT.read_retry(Adafruit_DHT.DHT22, 23)
-        pressure= get_pressure()
+        while not read_ok:
+            humidity_in, temperature_in = Adafruit_DHT.read_retry(Adafruit_DHT.DHT22, DHT_IN_PIN, 5, 0.2)
+            if humidity_in is None or temperature_in is None:
+                if not sensor_error:
+                    write_error("The internal temperature and humidity sensor is not responding.")
+                    write_error("STOP logging.")
+                    sensor_error = True
+                break
 
-        if humidity is not None and temperature is not None and humidity_2 is not None and temperature_2 is not None and pressure is not None:
-            #info = 'THP_DATA T_IN={0:0.1f}  H_IN={1:0.1f} T_OUT={2:0.1f}  H_OUT={3:0.1f} P_IN={4:0.2f}'.format(temperature, humidity, temperature_2, humidity_2, pressure)
-            info = 'INFO\t{0:0.1f}\t{1:0.1f}\t{2:0.1f}\t{3:0.1f}\t{4:0.2f}'.format(temperature, humidity, temperature_2, humidity_2, pressure)
-            read_ok = True
-        else:
-            break
+            humidity_out, temperature_out = Adafruit_DHT.read_retry(Adafruit_DHT.DHT22, DHT_OUT_PIN, 5, 0.2)
+            if humidity_out is None or temperature_out is None:
+                if not sensor_error:
+                    write_error("The external temperature and humidity sensor is not responding.")
+                    write_error("STOP logging.")
+                    sensor_error = True
+                break
+            
+            if sensor_error:
+                sensor_error = False
+                write_info("Reading from the temperature and humidity sensors is correct.")
+                write_info("START logging.")
 
-        a= float(time.strftime("%S",time.localtime())) % 5
-        while a != 0:
-            a= float(time.strftime("%S",time.localtime())) % 5
-        while not os.path.exists(LOGS_DIRECTORY):
-            time.sleep(1)
-        logging.info(info)
-        file = open(LOGS_DIRECTORY + "THP_DATA_CURRENT.log", 'w+')
-        file.write(time.strftime("%Y-%m-%d\t%H:%M:%S,000",time.localtime())+ '\t'+ info)
-        file.close()
+            pressure= get_pressure()
+
+            if humidity_in is not None and humidity_out is not None and temperature_in is not None and temperature_out is not None and pressure is not None:
+                INFO = 'INFO\t{0:0.1f}\t{1:0.1f}\t{2:0.1f}\t{3:0.1f}\t{4:0.2f}\n'.format(temperature_in, humidity_in, temperature_out, humidity_out, pressure)
+                read_ok = True
+            else:
+                break
+
+            sec= float(time.strftime("%S",time.localtime())) % 5 
+            while sec != 0:
+                sec= float(time.strftime("%S",time.localtime())) % 5
+            if not os.path.exists(STORAGE_PATH):
+                break                
+            try:
+                file = open("{0}/{1}{2}".format(LOGS_PATH, CURRENT_LOG_NAME, LOG_EX) , 'w+')
+                if file is None:
+                    break
+                file.write(time.strftime("%G-%m-%d\t%H:%M:%S,000",time.localtime())+ '\t'+ INFO)
+                file.close()
+            except Exception:
+                break;
+
+            try:
+                file = open("{0}/{1}{2}".format(LOGS_PATH, LOG_NAME, LOG_EX), 'a+')
+                if file is None:
+                    break
+                file.write(time.strftime("%G-%m-%d\t%H:%M:%S,000",time.localtime())+ '\t'+ INFO)
+                file.close()
+            except Exception:
+                break
+
