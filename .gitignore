@@ -6,3 +6,5 @@ app/\
 app/temp/
 var/
 app/app/core
+scripts/RTIMULib.ini
+
