@@ -1,0 +1,15 @@
+[Unit]
+Description=CLOCK SET TIME
+Requires=systemd-modules-load.service
+After=systemd-modules-load.service
+Before=sysvinit.target
+ 
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/sh -c /home/pi/app/scripts/clock.sh 
+Restart=no
+ 
+[Install]
+WantedBy=sysinit.target
+
