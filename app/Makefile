@@ -32,7 +32,7 @@ start: app
 	./app
 
 app: main.c $(FILE_FLAG)
-	$(CC) $(FILE_LINKER) $(mapviewer_CFLAGS) $(GTK_LIBS) src/def.h main.c  -o app  -lm -lgps -pedantic -Wall
+	$(CC) $(FILE_LINKER) $(mapviewer_CFLAGS) $(GTK_LIBS) src/def.h main.c  -o app  -lm -pedantic -Wall
 	$(RM) src/*.gch
 
 clean:
@@ -50,3 +50,4 @@ ui_library.o: src/ui_library.c src/ui_library.h src/gps_module.h
 
 #gps.o: src/gps_library.c src/gps_library.h src/minmea.c src/minmea.h
 #	$(CC) -c -Wall -pedantic src/gps_libra:ry.c src/gps_library.h src/minmea.c src/minmea.h
+#	dodać -g 
