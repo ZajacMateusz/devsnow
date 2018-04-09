@@ -170,5 +170,6 @@ while True:
                 except Exception:
                     break;
                 read_ok = True
+            time.sleep(0.1)
            
 

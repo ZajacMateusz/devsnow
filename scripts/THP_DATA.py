@@ -227,7 +227,7 @@ while True:
         read_ok = False
 
         while not read_ok:
-            humidity_in, temperature_in = Adafruit_DHT.read_retry(Adafruit_DHT.DHT22, DHT_IN_PIN, 5, 0.2)
+            humidity_in, temperature_in = Adafruit_DHT.read_retry(Adafruit_DHT.DHT22, DHT_IN_PIN, 3, 0)
             if humidity_in is None or temperature_in is None:
                 if not sensor_error:
                     write_error("The internal temperature and humidity sensor is not responding.")
@@ -235,7 +235,7 @@ while True:
                     sensor_error = True
                 break
 
-            humidity_out, temperature_out = Adafruit_DHT.read_retry(Adafruit_DHT.DHT22, DHT_OUT_PIN, 5, 0.2)
+            humidity_out, temperature_out = Adafruit_DHT.read_retry(Adafruit_DHT.DHT22, DHT_OUT_PIN, 3, 0)
             if humidity_out is None or temperature_out is None:
                 if not sensor_error:
                     write_error("The external temperature and humidity sensor is not responding.")
@@ -258,6 +258,7 @@ while True:
 
             sec= float(time.strftime("%S",time.localtime())) % 5 
             while sec != 0:
+                time.sleep(0.2)
                 sec= float(time.strftime("%S",time.localtime())) % 5
             if not os.path.exists(STORAGE_PATH):
                 break                
@@ -278,4 +279,5 @@ while True:
                 file.close()
             except Exception:
                 break
+
 
