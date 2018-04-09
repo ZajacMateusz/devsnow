@@ -1,6 +1,0 @@
-*.a
-*.o
-app/maps/
-app/\
-app/temp/
-app/var/
