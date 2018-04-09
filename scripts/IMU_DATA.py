@@ -3,7 +3,6 @@
 # Author: Mateusz Zajac
 
 import sys, getopt
-import Adafruit_DHT
 import time
 import smbus
 import os
@@ -87,19 +86,19 @@ def set_path():
 
     if not os.path.exists("{0}/{1}".format(STORAGE_PATH, LOGS_MAIN_DIRECTORY)):
         time.sleep(0.5) #when usb 
-        subprocess.call("mkdir {0}/{1}".format(STORAGE_PATH, LOGS_MAIN_DIRECTORY) , shell=True)
+        subprocess.call("mkdir {0}/{1} -m 665".format(STORAGE_PATH, LOGS_MAIN_DIRECTORY) , shell=True)
         if not os.path.exists("{0}/{1}".format(STORAGE_PATH, LOGS_MAIN_DIRECTORY)):
             return False
         write_info("Main logs directory was created.")
 
     if not os.path.exists("{0}/{1}/{2}".format(STORAGE_PATH, LOGS_MAIN_DIRECTORY, LOGS_DIRECTORY)):
-        subprocess.call("mkdir {0}/{1}/{2}".format(STORAGE_PATH, LOGS_MAIN_DIRECTORY, LOGS_DIRECTORY),  shell=True)
+        subprocess.call("mkdir {0}/{1}/{2} -m 665".format(STORAGE_PATH, LOGS_MAIN_DIRECTORY, LOGS_DIRECTORY),  shell=True)
         if not os.path.exists("{0}/{1}/{2}".format(STORAGE_PATH, LOGS_MAIN_DIRECTORY, LOGS_DIRECTORY)):
             return False
         write_info("Thp data logs directory was created.")
 
     if not os.path.exists("{0}/{1}/{2}/{3}".format(STORAGE_PATH, LOGS_MAIN_DIRECTORY, LOGS_DIRECTORY, BACKUP_DIRECTORY)):
-        subprocess.call("mkdir {0}/{1}/{2}/{3}".format(STORAGE_PATH, LOGS_MAIN_DIRECTORY, LOGS_DIRECTORY, BACKUP_DIRECTORY),  shell=True)
+        subprocess.call("mkdir {0}/{1}/{2}/{3} -m 665".format(STORAGE_PATH, LOGS_MAIN_DIRECTORY, LOGS_DIRECTORY, BACKUP_DIRECTORY),  shell=True)
         if not os.path.exists("{0}/{1}/{2}/{3}".format(STORAGE_PATH, LOGS_MAIN_DIRECTORY, LOGS_DIRECTORY, BACKUP_DIRECTORY)):
             return False
         write_info("Thp data logs backup directory was created.")
@@ -145,8 +144,6 @@ imu.setSlerpPower(0.02)
 imu.setGyroEnable(True)
 imu.setAccelEnable(True)
 imu.setCompassEnable(True)
-counter= 0;
-counter_max= 50;
 
 poll_interval = imu.IMUGetPollInterval()
 
@@ -155,28 +152,23 @@ while True:
         time.sleep(1)
     else:
         read_ok = False
-        if(counter* poll_interval)>= counter_max:
-            while not read_ok:
-                if imu.IMURead():
-                    data = imu.getIMUData()
-                    fusionPose = data["fusionPose"]
-                    press = data["compass"]
+        while not read_ok:
+            if imu.IMURead():
+                data = imu.getIMUData()
+                fusionPose = data["fusionPose"]
+                press = data["compass"]
 
-                    INFO = "%.2f\t%.2f\t%.2f\t%.2f\n" % (math.degrees(fusionPose[0]), 
-                        math.degrees(fusionPose[1]), math.degrees(fusionPose[2]), math.degrees(press[0]))
+                INFO = "%.2f\t%.2f\t%.2f\t%.2f\n" % (math.degrees(fusionPose[0]), 
+                    math.degrees(fusionPose[1]), math.degrees(fusionPose[2]), math.degrees(press[0]))
 
-                    try:
-                        file = open("{0}/{1}{2}".format(LOGS_PATH, CURRENT_LOG_NAME, LOG_EX) , 'w+')
-                        if file is None:
-                            break
-                        file.write(time.strftime("%G-%m-%d\t%H:%M:%S,000",time.localtime())+ '\t'+ INFO)
-                        file.close()
-                    except Exception:
-                        break;
-                    counter= 0
-                    read_ok = True
-        else:
-            counter+= 1
-            time.sleep(poll_interval*1.0/1000)
+                try:
+                    file = open("{0}/{1}{2}".format(LOGS_PATH, CURRENT_LOG_NAME, LOG_EX) , 'w+')
+                    if file is None:
+                        break
+                    file.write(time.strftime("%G-%m-%d\t%H:%M:%S,000",time.localtime())+ '\t'+ INFO)
+                    file.close()
+                except Exception:
+                    break;
+                read_ok = True
            
 
