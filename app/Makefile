@@ -8,6 +8,7 @@ SOUP24_CFLAGS = -pthread -I/usr/include/libsoup-2.4 -I/usr/include/libxml2 -I/us
 GTK_LIBS = -lgtk-3 -lgdk-3 -lpangocairo-1.0 -lpango-1.0 -latk-1.0 -lcairo-gobject -lcairo -lgdk_pixbuf-2.0 -lgio-2.0 -lgobject-2.0 -lglib-2.0
 WARN_CFLAGS = -I. -Wall -Wstrict-prototypes -Wnested-externs -Werror=missing-prototypes -Werror=implicit-function-declaration -Werror=pointer-arith -Werror=init-self -Werror=format=2 -Werror=missing-include-dirs -Werror=return-type
 GTHREAD_CFLAGS = -pthread -I/usr/include/glib-2.0 -I/usr/lib/arm-linux-gnueabihf/glib-2.0/include
+FLAG_FOR_ALL = -g
 
 OSMGPSMAP_CFLAGS = \
     $(GLIB_CFLAGS)          \
@@ -31,21 +32,24 @@ FILE_LINKER = gps_module.o ui_library.o minmea.o
 start: app
 	./app
 
-app: main.c $(FILE_FLAG)
-	$(CC) $(FILE_LINKER) $(mapviewer_CFLAGS) $(GTK_LIBS) src/def.h main.c  -o app  -lm -pedantic -Wall
+D: app
+	DISPLAY=:0.0 ./app
+
+app: main.c $(FILE_FLAG) 
+	$(CC) $(FILE_LINKER) $(FLAG_FOR_ALL) $(mapviewer_CFLAGS) $(GTK_LIBS) src/def.h main.c  -o app  -lm -pedantic -Wall
 	$(RM) src/*.gch
 
 clean:
 	$(RM) app minmea.o gps_module.o ui_library.o src/*.gch
 
 minmea.o: src/minmea.c src/minmea.h
-	$(CC) src/minmea.c src/minmea.h -c -Wall -pedantic
+	$(CC) src/minmea.c src/minmea.h $(FLAG_FOR_ALL) -c -Wall -pedantic
 
 gps_module.o: src/gps_module.c src/gps_module.h src/minmea.h
-	$(CC) -c  src/gps_module.c src/gps_module.h $(GLIB_CFLAGS)
+	$(CC) -c  src/gps_module.c src/gps_module.h $(GLIB_CFLAGS) $(FLAG_FOR_ALL)
 
 ui_library.o: src/ui_library.c src/ui_library.h src/gps_module.h
-	$(CC) -c $(GTK_CFLAGS) $(GTK_LIBS) src/ui_library.c src/ui_library.h
+	$(CC) -c $(GTK_CFLAGS) $(GTK_LIBS) $(FLAG_FOR_ALL) src/ui_library.c src/ui_library.h
 
 
 #gps.o: src/gps_library.c src/gps_library.h src/minmea.c src/minmea.h
