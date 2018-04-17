@@ -13,20 +13,19 @@
 #include <errno.h>
 #include <glib.h>
 
-
 int gps_open_connection(char * serial_port_src){
     
 	return open(serial_port_src , O_RDWR | O_NOCTTY | O_NDELAY);
 }
 
-int gps_set_interface_attribs (int serial_port, int speed, int parity){
+int gps_set_interface_attribs(int serial_port, int speed, int parity){
 
 	struct termios tty;
 	memset (&tty, 0, sizeof tty);
 
 	if (tcgetattr (serial_port, &tty) != 0)
 	{
-		//printf("Błąd %d z tcgetattr \n", errno);
+		printf("Błąd %d z tcgetattr \n", errno);
 		return -1;
 	}
 
@@ -40,7 +39,7 @@ int gps_set_interface_attribs (int serial_port, int speed, int parity){
 							// no canonical processing
 	tty.c_oflag = 0;				// no remapping, no delays
 	tty.c_cc[VMIN]  = 0;				// read doesn't block
-	tty.c_cc[VTIME] = 5;				// 0.5 seconds read timeout
+	tty.c_cc[VTIME] = 1;				// 0.1 seconds read timeout
 	tty.c_iflag &= ~(IXON | IXOFF | IXANY);		// shut off xon/xoff ctrl
 	tty.c_cflag |= (CLOCAL | CREAD);		// ignore modem controls,
                                         		// enable reading
@@ -51,7 +50,7 @@ int gps_set_interface_attribs (int serial_port, int speed, int parity){
 
 	if (tcsetattr (serial_port, TCSANOW, &tty) != 0)
 	{
-		//printf("Błąd %d z tcsetattr \n", errno);
+		printf("Błąd %d z tcsetattr \n", errno);
 		return -1;
 	}
 	return 0;
@@ -60,31 +59,29 @@ int gps_set_interface_attribs (int serial_port, int speed, int parity){
 int gps_init(char *gps_source){
 
 	int serial_port= gps_open_connection(gps_source);
-	char message[100];
+	char sentence[NMEA_SENTENCE_MAX_LENGTH];
 
 	if (serial_port < 0){
 		return 0;
 	}
 
 	gps_set_interface_attribs (serial_port, B9600, 0);
-	strcpy(message, GPS_SET_BAUDRATE_115200); // set gps baut rate to 115200
-	write(serial_port, message, strlen(message));
+	strcpy(sentence, GPS_SET_BAUDRATE_115200); // set gps baut rate to 115200
+	write(serial_port, sentence, strlen(sentence));
 
-	usleep(800000);
-	//usleep((int)(10 * CHAR_TIME_9600 * strlen(message) * 1000000));
+	usleep(GPS_INIT_TIME_IN_US);
 	           
 	gps_set_interface_attribs (serial_port, B115200, 0);               
-	strcpy(message, GPS_SET_UPDATERATE_5HZ); // set gps update rate to 5 Hz
-	write(serial_port, message, strlen(message));
+	strcpy(sentence, GPS_SET_UPDATERATE_5HZ); // set gps update rate to 5 Hz
+	write(serial_port, sentence, strlen(sentence));
 
-	usleep(100000);
-	char *sentence = malloc(MAX_LENGTH_NMEA_SENTENCE * sizeof(char));
-	gps_read_sentence(serial_port, sentence, 1);
-	close(serial_port);
-	if (!minmea_check(sentence, false)){
+	usleep(GPS_INIT_TIME_IN_US);
+	tcflush(serial_port,TCIOFLUSH);
+	if (gps_read(serial_port, NULL, GPS_READ_MAX_TIME_IN_S) != 1){
+		close(serial_port);
 		return 0;
 	}
-
+	close(serial_port);
 	return 1;
 }
 
@@ -92,90 +89,40 @@ void gps_print_sentence(char *sentence){
 
 	char c = 'a';
 	int i = 0;
-	while (c != '\n'){
+	while (c != '\n' && i < NMEA_SENTENCE_MAX_LENGTH){
 		c = *(sentence + i * sizeof(*sentence));
 		printf("%c", c);
 		++i;
 	} 
 }
 
-int gps_read_sentence(int serial_port, char *sentence, int offset_on){
+int gps_position_data_update(char *sentence, nmea *position){
 
-	struct timeval  tv1, tv2;        
-	double offset= 0;
-	unsigned char c='0';
-	gettimeofday(&tv1, NULL);
-
-	while (c != 'q'){ 
-		if (read(serial_port,&c,1) > 0){
-			if (c == '$'){
-				*sentence = c;
-				sentence++;
-				while (c != '\n'){
-					if (read(serial_port,&c,1) > 0){
-						*sentence = c;
-						sentence++;       
-					}                                                       
-				} 
-				c = 'q';                               
-			}
-		}
-		if (offset_on){
-			gettimeofday(&tv2, NULL);
-			offset = (double) (tv2.tv_usec - tv1.tv_usec) / 1000000 + (double) (tv2.tv_sec - tv1.tv_sec); 
-			if (offset > 0.05){
-				break; 
-			}
-		} else {
-			gettimeofday(&tv2, NULL);
-			offset = (double) (tv2.tv_usec - tv1.tv_usec) / 1000000 + (double) (tv2.tv_sec - tv1.tv_sec); 
-			if(offset > 1.0){
-				break; 
-			}
-		}
-	}
-
-	if (c != 'q'){
-		return 0;
-	} else { 
-		return 1;
-	}
-}
-
-int gps_position_data_update(char *sentence, device_data *dev){
-
-	char line[200];
-	char c = 'a';
-	int i = 0;
 	struct minmea_sentence_rmc frame_rmc;
 	struct minmea_sentence_gga frame_gga;
 
-	while (c != '\n') {
-	c = *(sentence + i * sizeof(*sentence));
-	line[i++] = c;
-	if (c == '\n')
-		line[i] = '\0';
-	}
-	switch (minmea_sentence_id(line, false)) {
+	switch (minmea_sentence_id(sentence, false)) {
 		case MINMEA_SENTENCE_RMC: {
-			if (minmea_parse_rmc(&frame_rmc, line)) {
-				dev->position->lat = minmea_tocoord(&frame_rmc.latitude);
-				dev->position->lon = minmea_tocoord(&frame_rmc.longitude);
-				dev->position->speed =
-					minmea_tofloat(&frame_rmc.speed) * GPS_KNOTS_TO_KM_PER_H;
-				dev->position->course = minmea_tofloat(&frame_rmc.course);
+			if (minmea_parse_rmc(&frame_rmc, sentence)) {
+				position->lat = minmea_tocoord(&frame_rmc.latitude);
+				position->lon = minmea_tocoord(&frame_rmc.longitude);
+				position->speed = minmea_tofloat(&frame_rmc.speed) * GPS_KNOTS_TO_KM_PER_H;
+				position->course = minmea_tofloat(&frame_rmc.course);
 			}
 			break;
 		}
 		case MINMEA_SENTENCE_GGA: {
-			if (minmea_parse_gga(&frame_gga, line)) {
-				dev->position->alt = minmea_tofloat(&frame_gga.altitude);
-				dev->position->fix_quality = frame_gga.fix_quality;
+			if (minmea_parse_gga(&frame_gga, sentence)) {
+				position->alt = minmea_tofloat(&frame_gga.altitude);
+				position->fix_quality = frame_gga.fix_quality;
 				/* XXX don't know why, but need to divide ...*/
 				frame_gga.time.microseconds /= 10000;
 				/* strefa czasowa + 1 */
-				frame_gga.time.hours += 1;
-				sprintf(dev->position->time, "%02i:%02i:%02i:%02i",
+				frame_gga.time.hours += 2;
+				if (frame_gga.time.hours > 24){
+					frame_gga.time.hours = frame_gga.time.hours - 24;
+				}
+				sprintf(position->time, "%02i:%02i:%02i:%02i",
 					frame_gga.time.hours,
 					frame_gga.time.minutes,
 					frame_gga.time.seconds,
@@ -191,41 +138,73 @@ int gps_position_data_update(char *sentence, device_data *dev){
 	return 0;
 }
 
-int gps_read_all(char *gps_source, device_data *dev){
 
-	int serial_port= gps_open_connection(gps_source);
+int gps_read(int serial_port, nmea *position, double TIMEOUT_IN_S){
+
+	bool sentence_find = false;
+	bool timeout_set = false;
+
 	if(serial_port< 0){
+		return -1;
+	}
+	// Initialize file descriptor sets
+	fd_set read_fds, write_fds, except_fds;
+	FD_ZERO(&read_fds);
+	FD_ZERO(&write_fds);
+	FD_ZERO(&except_fds);
+	FD_SET(serial_port, &read_fds);
+
+	struct timeval timeout;
+	timeout.tv_sec = 0;
+	timeout.tv_usec = TIMEOUT_IN_S * 1000000;
+
+	if (select(serial_port + 1, &read_fds, &write_fds, &except_fds, &timeout) == 1){
+
+		timeout.tv_usec = 0.02 * 1000000;
+		do {
+			char *sentence= malloc(NMEA_SENTENCE_MAX_LENGTH * sizeof(*sentence));
+			char *begin = sentence;
+			bool first_char_find = false;
+			do {
+				if (first_char_find != true){
+					if (select(serial_port + 1, &read_fds, &write_fds, &except_fds, &timeout) == 1){
+						if (read(serial_port, sentence, sizeof(*sentence)) > 0 && *sentence == '$'){
+
+							first_char_find = true;
+							sentence++;
+						}
+					} else {
+						timeout_set = true;
+						tcflush(serial_port, TCIOFLUSH);
+						break;
+					}
+				} else {
+					if (read(serial_port, sentence, sizeof(*sentence)) > 0){
+						sentence++;
+					} else {
+						usleep(100);
+					}
+				}
+			} while (!(*(sentence- sizeof(*sentence)) == '\n' && first_char_find) == true);
+
+			*sentence = '\0';
+
+			if (timeout_set == false && minmea_check(begin, false)){
+				sentence_find = true;
+				if (position != NULL){
+					gps_position_data_update(begin, position);
+				}
+			}
+
+		} while (timeout_set == false);
+	} else {
 		return 0;
-	} 
+	}
 
-	tcflush(serial_port,TCIOFLUSH);
-
-	char *sentence= malloc(256 * sizeof(*sentence));
-	int size_char= sizeof(*sentence);
-	int first_sentence= 0;
-	int stop = 0;
-	int offset= 0;
-
-	while (!stop){
-		if (!gps_read_sentence(serial_port, sentence, offset)){
-			stop= 1;
-			close(serial_port);
-			if (first_sentence){
-				return 1;
-			} else {
-				return 0;
-			}
-		} else {                        
-			if(!first_sentence && *(sentence+ 3* size_char) == 'G' && *(sentence+ 4* size_char) == 'G' && *(sentence+ 5* size_char) == 'A'){ 
-				first_sentence= offset= 1;
-			}
-			if( first_sentence ){
-				/* output sentence to console for debugging */
-				//gps_print_sentence(sentence);
-				gps_position_data_update(sentence, dev);
-			}         
-		}
+	if (sentence_find == true){
+		return 1;
 	}
 	return 0;
 }
+
 

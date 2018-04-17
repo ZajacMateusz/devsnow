@@ -21,9 +21,17 @@ extern "C" {
 #define GPS_SET_BAUDRATE_115200		"$PMTK251,115200*1F\r\n"
 #define GPS_SET_UPDATERATE_5HZ		"$PMTK220,200*2C\r\n"
 #define GPS_SET_UPDATERATE_5H_REPLY	"$PMTK,251,2*37\r\n"
-#define CHAR_TIME_9600			10 / 9600
 #define GPS_KNOTS_TO_KM_PER_H		1.852
-#define MAX_LENGTH_NMEA_SENTENCE	200
+#define GPS_READ_MAX_TIME_IN_S		0.2
+#define GPS_INIT_TIME_IN_US		1000000
+#define CHAR_TIME_9600_IN_US		1042
+#define CHAR_TIME_115200_IN_US		87
+#define NMEA_SENTENCE_MAX_LENGTH	100
+
+//
+// NMEA doc:
+// http://www.tronico.fi/OH6NT/docs/NMEA0183.pdf
+//
 
 /**
 * Open the serial port connection.
@@ -50,22 +58,16 @@ int gps_init(char *gps_source);
 void gps_print_sentence(char * sentence);
 
 /**
-* Read one sentence from the serial port.
-*/
-
-int gps_read_sentence(int serial_port, char *sentence, int offset_on);
-
-/**
 * Update the position data
 */
 
-int gps_position_data_update(char *sentence, device_data *dev);
+int gps_position_data_update(char *sentence, nmea *position);
 
 /**
 * Read all sentences available in one time period
 */
 
-int gps_read_all(char *gps_source, device_data *dev);
+int gps_read(int gps_serial, nmea *position, double TIMEOUT_IN_S);
 
 
 #endif
