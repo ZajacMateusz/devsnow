@@ -81,6 +81,10 @@ typedef struct device_data{
 */
 
 #define ATMOSPHERIC_CONDITIONS_LOG_SRC	"/media/pi/DATA/logs/thp_data/THP_DATA_CURRENT.log"
+#define STORAGE_PATH			"/media/pi/DATA"
+#define LOGS_MAIN_DIRECTORY		"logs"
+#define TEST_FILE_NAME			"info_file"
+#define LOG_EX				".log"
 #define DEVICE_DATA_LOG_SRC		"/media/pi/DATA/logs/device_data/"
 #define GPS_SERIAL_SOURCE      		"/dev/ttyS0" 
 #define INDENT_SPACES			"  " 
