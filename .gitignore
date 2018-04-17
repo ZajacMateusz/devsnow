@@ -3,7 +3,7 @@
 app/app
 app/maps/
 app/\
-app/temp/
+app/tmp/
 var/
 app/app/core
 scripts/RTIMULib.ini
