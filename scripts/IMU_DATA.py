@@ -62,6 +62,7 @@ while True:
                 except Exception:
                     break;
                 read_ok = True
-            time.sleep(0.01)
+            else:
+                time.sleep(0.01)
            
 

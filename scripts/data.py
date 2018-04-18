@@ -72,19 +72,19 @@ def set_path(LOGS_DIRECTORY, SCRIPT_NAME, backup):
     if not os.path.exists("{0}/{1}".format(STORAGE_PATH, LOGS_MAIN_DIRECTORY)):
         time.sleep(0.5) #when usb 
         write_info("Main logs directory was created.", SCRIPT_NAME)
-        subprocess.call("mkdir {0}/{1} -m 665".format(STORAGE_PATH, LOGS_MAIN_DIRECTORY) , shell=True)
+        subprocess.call("mkdir {0}/{1} -m 777".format(STORAGE_PATH, LOGS_MAIN_DIRECTORY) , shell=True)
         if not os.path.exists("{0}/{1}".format(STORAGE_PATH, LOGS_MAIN_DIRECTORY)):
             return False
 
     if not os.path.exists("{0}/{1}/{2}".format(STORAGE_PATH, LOGS_MAIN_DIRECTORY, LOGS_DIRECTORY)):
         write_info("Data logs directory was created.", SCRIPT_NAME)
-        subprocess.call("mkdir {0}/{1}/{2} -m 665".format(STORAGE_PATH, LOGS_MAIN_DIRECTORY, LOGS_DIRECTORY),  shell=True)
+        subprocess.call("mkdir {0}/{1}/{2} -m 777".format(STORAGE_PATH, LOGS_MAIN_DIRECTORY, LOGS_DIRECTORY),  shell=True)
         if not os.path.exists("{0}/{1}/{2}".format(STORAGE_PATH, LOGS_MAIN_DIRECTORY, LOGS_DIRECTORY)):
             return False
 
     if not os.path.exists("{0}/{1}/{2}/{3}".format(STORAGE_PATH, LOGS_MAIN_DIRECTORY, LOGS_DIRECTORY, BACKUP_DIRECTORY)):
         write_info("Data logs backup directory was created.", SCRIPT_NAME)
-        subprocess.call("mkdir {0}/{1}/{2}/{3} -m 665".format(STORAGE_PATH, LOGS_MAIN_DIRECTORY, LOGS_DIRECTORY, BACKUP_DIRECTORY),  shell=True)
+        subprocess.call("mkdir {0}/{1}/{2}/{3} -m 777".format(STORAGE_PATH, LOGS_MAIN_DIRECTORY, LOGS_DIRECTORY, BACKUP_DIRECTORY),  shell=True)
         if not os.path.exists("{0}/{1}/{2}/{3}".format(STORAGE_PATH, LOGS_MAIN_DIRECTORY, LOGS_DIRECTORY, BACKUP_DIRECTORY)):
             return False
 
