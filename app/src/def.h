@@ -17,7 +17,6 @@ typedef struct _imu
 * GPS data struct. 
 */
 
-
 typedef struct _nmea{
 	char date[100];
 	char ew; 
@@ -45,6 +44,9 @@ typedef struct device_data{
 	imu *imu_zero;
 	nmea *position;
 }device_data;
+
+#define LOGS_DIRECTORY			"device_data"
+#define SCRIPT_NAME			"DEVICE_DATA"
 
 /**
 *  GUI interface. 
@@ -81,14 +83,14 @@ typedef struct device_data{
 */
 
 #define ATMOSPHERIC_CONDITIONS_LOG_SRC	"/media/pi/DATA/logs/thp_data/THP_DATA_CURRENT.log"
-#define STORAGE_PATH			"/media/pi/DATA"
-#define LOGS_MAIN_DIRECTORY		"logs"
-#define TEST_FILE_NAME			"info_file"
-#define LOG_EX				".log"
 #define DEVICE_DATA_LOG_SRC		"/media/pi/DATA/logs/device_data/"
 #define GPS_SERIAL_SOURCE      		"/dev/ttyS0" 
 #define INDENT_SPACES			"  " 
 #define IMU_LOG_SRC                     "/media/pi/DATA/logs/imu_data/IMU_DATA_CURRENT.log"
 #define IMU_ZERO_LOG_SRC                "/media/pi/DATA/logs/imu_data/IMU_DATA_ZERO.log"
+#define LOG_EX				".log"
+#define LOGS_MAIN_DIRECTORY		"logs"
+#define STORAGE_PATH			"/media/pi/DATA"
+#define TEST_FILE_NAME			"info_file"
 
 #endif

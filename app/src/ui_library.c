@@ -1,32 +1,31 @@
 #include "ui_library.h"
 #include "minmea.h"
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <unistd.h>
 #include <fcntl.h>
-#include <termios.h>
-#include <sys/time.h>
-#include <errno.h>
-#include <stdbool.h>
-#include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
 #include <glib.h>
- 
-short ui_visible_item= 0b00100001;
+#include <gtk/gtk.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/time.h>
+#include <termios.h>
+#include <unistd.h>
+
+short ui_visible_item = 0b00100001;
 
 void ui_set_label_text(GtkBuilder *builder, char *id, char *text){
 	GtkLabel *label = (GtkLabel *)gtk_builder_get_object(builder, id);
-	gtk_label_set_text (label, text );
+	gtk_label_set_text(label, text );
 }
 
 void set_loading_progressbar(GtkBuilder *builder, char *id, float progress){ 
 	GtkProgressBar *pbar = (GtkProgressBar *)gtk_builder_get_object(builder, id);
-	gtk_progress_bar_set_fraction (pbar, progress); 
+	gtk_progress_bar_set_fraction(pbar, progress); 
 }
 
-void set_loading_module_progress(GtkBuilder *builder, float progress, char *progress_message ){
+void set_loading_module_progress(GtkBuilder *builder, float progress, char *progress_message){
 	ui_set_label_text(builder, "lb_progress_info_start_window", progress_message);
 	set_loading_progressbar(builder, "progressbar_start_window", progress);
 }
@@ -36,32 +35,32 @@ bool ui_box_is_visible(int flag){
 }
 
 void ui_set_flag(int flag){
-	ui_visible_item|= flag;
+	ui_visible_item |= flag;
 }
 
 void ui_reset_flag(int flag){
-	ui_visible_item&= ~flag;
+	ui_visible_item &= ~flag;
 }
 
 void ui_set_visible_box(GtkBuilder *builder, char *src, int flag){
 	if (!ui_box_is_visible(flag)){
-		gtk_widget_show (GTK_WIDGET(gtk_builder_get_object(builder, src)));  
+		gtk_widget_show(GTK_WIDGET(gtk_builder_get_object(builder, src)));  
 		ui_set_flag(flag);
 	} else {
-		gtk_widget_hide (GTK_WIDGET(gtk_builder_get_object(builder, src)));  
+		gtk_widget_hide(GTK_WIDGET(gtk_builder_get_object(builder, src)));  
 		ui_reset_flag(flag);
 	} 
 }   
 
-void ui_on_view_menu( GtkWidget *widget, GtkBuilder * builder){
+void ui_on_view_menu(GtkWidget *widget, GtkBuilder * builder){
 	ui_set_visible_box(builder, VIEW_MENU_SRC, VIEW_MENU_FLAG);
 }
 
-void ui_on_view_coordinates( GtkWidget *widget, GtkBuilder * builder){    
+void ui_on_view_coordinates(GtkWidget *widget, GtkBuilder * builder){    
 	ui_set_visible_box(builder, COORDINATES_BOX_SRC, COORDINATES_BOX_FLAG);
 }
 
-void ui_on_view_snow_depth(GtkWidget *widget, GtkBuilder * builder ){    
+void ui_on_view_snow_depth(GtkWidget *widget, GtkBuilder * builder){    
 	ui_set_visible_box(builder, WEATHER_CONDITIONS_BOX_SRC, WEATHER_CONDITIONS_BOX_FLAG);
 }
 
@@ -75,15 +74,15 @@ void create_builder(GtkBuilder *builder){
 	if (!gtk_builder_add_from_file(builder, UI_FILE, & error))
 	{
 		g_warning( "Nie można wczytać plilu buildera: %s", error->message );
-		g_error_free( error );
+		g_error_free(error);
 	}
 	gtk_builder_connect_signals(builder, NULL );
 }
 
 GtkWidget *create_window(GtkBuilder *builder, char *name){
     
-	GtkWidget * window; 
-	window = GTK_WIDGET( gtk_builder_get_object( builder, name ) );  
+	GtkWidget *window; 
+	window = GTK_WIDGET(gtk_builder_get_object( builder, name ));  
 	gtk_window_fullscreen(GTK_WINDOW(window));
     
 	return window;
@@ -136,7 +135,7 @@ void on_set_information(GtkBuilder * builder,  device_data *device){
 }
 
 void ui_gps_icon_change(GtkBuilder *builder){    
-	GtkImage *image= (GtkImage*)gtk_builder_get_object(builder, "img_gps_status");
+	GtkImage *image = (GtkImage*)gtk_builder_get_object(builder, "img_gps_status");
 	GdkPixbuf *image_src;    
 	if (ui_box_is_visible(GPS_ICON_FLAG)){        
 		image_src = gdk_pixbuf_new_from_file (GPS_ICON_ON_SRC, NULL);
@@ -148,7 +147,7 @@ void ui_gps_icon_change(GtkBuilder *builder){
 }
 
 void ui_snow_sensor_icon_change(GtkBuilder *builder){
-	GtkImage *image= (GtkImage*)gtk_builder_get_object(builder, "img_snow_sensor_status");   
+	GtkImage *image = (GtkImage*)gtk_builder_get_object(builder, "img_snow_sensor_status");   
 	GdkPixbuf *image_src; 
 	if (ui_box_is_visible(SNOW_SENSOR_ICON_FLAG)){        
 		image_src = gdk_pixbuf_new_from_file (SNOW_SENSOR_ICON_ON_SRC, NULL);
@@ -161,7 +160,7 @@ void ui_snow_sensor_icon_change(GtkBuilder *builder){
 
 void ui_show_interface_item(GtkBuilder *builder){
 
-	ui_gps_icon_change( builder );
+	ui_gps_icon_change(builder);
 	ui_snow_sensor_icon_change(builder);
 	ui_set_visible_box(builder, VIEW_MENU_SRC, VIEW_MENU_FLAG);
 	ui_set_visible_box(builder, WEATHER_CONDITIONS_BOX_SRC, WEATHER_CONDITIONS_BOX_FLAG);

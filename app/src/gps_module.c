@@ -25,7 +25,6 @@ int gps_set_interface_attribs(int serial_port, int speed, int parity){
 
 	if (tcgetattr (serial_port, &tty) != 0)
 	{
-		printf("Błąd %d z tcgetattr \n", errno);
 		return -1;
 	}
 
@@ -53,7 +52,7 @@ int gps_set_interface_attribs(int serial_port, int speed, int parity){
 		printf("Błąd %d z tcsetattr \n", errno);
 		return -1;
 	}
-	return 0;
+	return 1;
 }
 
 int gps_init(char *gps_source){
@@ -62,7 +61,7 @@ int gps_init(char *gps_source){
 	char sentence[NMEA_SENTENCE_MAX_LENGTH];
 
 	if (serial_port < 0){
-		return 0;
+		return -1;
 	}
 
 	gps_set_interface_attribs (serial_port, B9600, 0);
@@ -100,6 +99,7 @@ int gps_position_data_update(char *sentence, nmea *position){
 
 	struct minmea_sentence_rmc frame_rmc;
 	struct minmea_sentence_gga frame_gga;
+	bool update = false;
 
 	switch (minmea_sentence_id(sentence, false)) {
 		case MINMEA_SENTENCE_RMC: {
@@ -108,6 +108,7 @@ int gps_position_data_update(char *sentence, nmea *position){
 				position->lon = minmea_tocoord(&frame_rmc.longitude);
 				position->speed = minmea_tofloat(&frame_rmc.speed) * GPS_KNOTS_TO_KM_PER_H;
 				position->course = minmea_tofloat(&frame_rmc.course);
+				update = true;
 			}
 			break;
 		}
@@ -127,6 +128,7 @@ int gps_position_data_update(char *sentence, nmea *position){
 					frame_gga.time.minutes,
 					frame_gga.time.seconds,
 					frame_gga.time.microseconds);
+				update = true;
 			}
 			break;
 		}
@@ -134,6 +136,9 @@ int gps_position_data_update(char *sentence, nmea *position){
 			/* do nothing */
 			break;
 		}
+	}
+	if (update == true){
+		return 1;
 	}
 	return 0;
 }

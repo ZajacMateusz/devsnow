@@ -7,10 +7,9 @@ extern "C" {
 #endif
 
 #include "def.h"
-#include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
 #include <glib.h>
-
+#include <gtk/gtk.h>
 #include <stdbool.h>
 
 /**
@@ -36,6 +35,7 @@ void set_loading_module_progress(GtkBuilder * builder, float progress, char *pro
 */
 
 bool ui_box_is_visible( int flag);
+//Return true if the box is visible or false if not.
 
 /**
 * Set the flag for ui item.
@@ -90,6 +90,7 @@ void create_builder(GtkBuilder * builder);
 */
 
 GtkWidget *create_window(GtkBuilder * builder, char *name);
+//Return new window GtkWidget.
 
 /**
 * Read device_data structure and set the text for the label.

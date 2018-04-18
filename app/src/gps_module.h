@@ -38,18 +38,21 @@ extern "C" {
 */
 
 int gps_open_connection(char * serial_port_src);
+//Returns the file descriptor (nonnegative integer) or -1 if an error occurs.
 
 /**
 * Set the serial port attributes.
 */
 
 int gps_set_interface_attribs (int serial_port, int speed, int parity);
+//Returns 1 if it succeseeds or -1 if an error occurs.
 
 /**
 * Set the gps baudrate and update rate.
 */
 
 int gps_init(char *gps_source);
+//Return 1 if it succeseeds, 0 if not or -1 if there is an access error to teh serial.
 
 /**
 * Print NMEA raw sentence to the console.
@@ -62,12 +65,15 @@ void gps_print_sentence(char * sentence);
 */
 
 int gps_position_data_update(char *sentence, nmea *position);
+//Return 1 if updated or 0 if not
 
 /**
 * Read all sentences available in one time period
 */
 
 int gps_read(int gps_serial, nmea *position, double TIMEOUT_IN_S);
+//Return 1 if it succeseeds, 0 if there is no data to read 
+//or -1 if there is an access error to teh serial.
 
 
 #endif

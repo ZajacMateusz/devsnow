@@ -6,29 +6,23 @@
 
  /* ******************* include *************************** */
 
+#include <fcntl.h>
+#include <gdk/gdkkeysyms.h>
+#include <glib.h>
+#include <gtk/gtk.h>
+#include <math.h>
+#include "osm-gps-map.h"
+#include "src/def.h"
+#include "src/gps_module.h"
+#include "src/minmea.h"
+#include "src/ui_library.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <math.h>
-#include <gtk/gtk.h>
-#include <gdk/gdkkeysyms.h>
-#include <glib.h>
-#include "osm-gps-map.h"
-#include "src/def.h"
-
-#include "src/minmea.h"
-#include "src/gps_module.h"
-#include "src/ui_library.h"
-
-#include <unistd.h>
-#include <fcntl.h>
-#include <termios.h>
-#include <sys/time.h>
-
 #include <sys/stat.h>
-
-#define SCRIPT_NAME	"DEVICE_DATA"
-#define LOGS_DIRECTORY	"device_data"
+#include <sys/time.h>
+#include <termios.h>
+#include <unistd.h>
 
 /* ******************* global variables **************************** */
 
@@ -44,13 +38,6 @@ OsmGpsMap *map;
 struct timeval tv;
 
 /* ******************* functions  ******************* */
-/*
-static void
-print_error(char *message){
-
-	printf("\nERROR: %s\n\n", message);
-	gtk_main_quit();
-}*/
 
 static
 int save_log_to_file(device_data *device){
