@@ -82,6 +82,7 @@ typedef struct device_data{
 * GPS. 
 */
 
+#define APP_LOG_PATH			"/home/pi/app/var/applog"
 #define ATMOSPHERIC_CONDITIONS_LOG_SRC	"/media/pi/DATA/logs/thp_data/THP_DATA_CURRENT.log"
 #define DEVICE_DATA_LOG_SRC		"/media/pi/DATA/logs/device_data/"
 #define GPS_SERIAL_SOURCE      		"/dev/ttyS0" 

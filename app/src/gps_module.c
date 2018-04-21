@@ -200,6 +200,9 @@ int gps_read(int serial_port, nmea *position, double TIMEOUT_IN_S){
 					gps_position_data_update(begin, position);
 				}
 			}
+			sentence = NULL;
+			free(begin);
+
 
 		} while (timeout_set == false);
 	} else {

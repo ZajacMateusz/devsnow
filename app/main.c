@@ -39,10 +39,10 @@ struct timeval tv;
 
 /* ******************* functions  ******************* */
 
-static
-int save_log_to_file(device_data *device){
+static int
+save_log_to_file(device_data *device){
 
-	char *file_name= malloc(strlen(device->position->date) + strlen(SCRIPT_NAME) +strlen(LOG_EX) + 1);
+	char *file_name = malloc(strlen(device->position->date) + strlen(SCRIPT_NAME) +strlen(LOG_EX) + 1);
 	char *path = malloc(strlen(STORAGE_PATH) + strlen(TEST_FILE_NAME)+1);
 	FILE *file;
 	struct stat sb;
@@ -51,18 +51,19 @@ int save_log_to_file(device_data *device){
 	sprintf(path, "%s/%s", STORAGE_PATH, TEST_FILE_NAME);
 
 	file = fopen(path, "r");
+	free(path);
 	if (file == NULL){
 		return 0;
-	} else {
+	} else {	
 		fclose(file);
-		path = NULL;
 		path = malloc(strlen(STORAGE_PATH) + strlen(LOGS_MAIN_DIRECTORY) + strlen(LOGS_DIRECTORY) + 3 + strlen(file_name));
 		sprintf(path, "%s/%s", STORAGE_PATH, LOGS_MAIN_DIRECTORY);
 
 		if (stat(path, &sb) == -1){
 			mkdir(path, 0777);
 			if (stat(path, &sb) == -1){
-				return 0;
+				free(path);
+				return -1;
 			}
 		} 
 
@@ -72,7 +73,8 @@ int save_log_to_file(device_data *device){
 			mkdir(path, 0777);
 			if (stat(path, &sb) == -1){
 				printf("Folder nie istnieje.%s\n", path);
-				return 0;
+				free(path);
+				return -1;
 			}
 		}
 
@@ -80,15 +82,18 @@ int save_log_to_file(device_data *device){
 
 		if (access(path, F_OK) == -1) {
 			file = fopen(path, "a+");
+			free(path);
 			if ( file != NULL){
 				fprintf(file, "time\tlatitude\tlongitude\taltitude\tspeed\tsnow_depth\ttemperature\thumidity\tpressure\trotate_1\trotate_2\n");
 				fclose(file);
 			} else {
-				return 0;
+				return -1;
 			}
 		}
 
-		file = fopen(path, "a");
+		file = fopen(path, "a+");
+		free(file_name);
+		free(path);
 		if (file != NULL){
 			fprintf(file, "%s\t%f\t%f\t%f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\n", device->position->time, device->position->lat,
 					device->position->lon, device->position->alt, device->position->speed, device->snow_depth, 
@@ -98,6 +103,38 @@ int save_log_to_file(device_data *device){
 		}
 		return 0;
 		
+	}
+	return 1;
+}
+
+static int
+print_log(char *time, char *message, char label){
+	
+	char *lab;
+	char *path = malloc(strlen(APP_LOG_PATH));
+	FILE *file;
+
+	switch (label){
+		case 'E':
+			lab = "ERROR";
+			break;
+		case 'I':
+			lab = "INFO";
+			break;
+		default:
+			lab = "INFO";
+			break;
+	}
+
+	sprintf(path, "%s", APP_LOG_PATH);
+
+	file = fopen(path, "a+");
+	free(path);
+	if (file == NULL){
+		return 0;
+	} else {
+		fprintf(file, "%s [%s]\t%s\n", time, lab, message);
+		fclose(file);
 	}
 	return 1;
 }
@@ -114,6 +151,8 @@ ui_read_temp_and_hum(void){
 	sprintf(file_name, "%s", ATMOSPHERIC_CONDITIONS_LOG_SRC);
 
 	if ((fptr = fopen(file_name, "r")) == NULL){
+		free(temp);
+		free(file_name);
 		return 0;
 	}
 
@@ -147,6 +186,8 @@ ui_read_temp_and_hum(void){
 		}
 		read_ok = true;
 	}
+	free(temp);
+	free(file_name);
 	fclose(fptr);
 	if (read_ok == 1){
 		device->temperature = tem;
@@ -167,42 +208,43 @@ read_imu_data(imu *imu_data, char *src_file){
 
 	for (int i = 0; i< 3; ++i){
 		if ((fptr = fopen(src_file, "r")) != NULL){
+			for (int i = 0; i < 6; ++i){
+				if (fscanf(fptr, "%s", temp) == EOF){
+					break;
+				}
+				switch (i){
+					case 0:
+						break;
+					case 1:
+						break;
+					case 2:
+						imu_temp->r = atof(temp);
+						break;
+					case 3:
+						imu_temp->p = atof(temp);
+						break;
+					case 4:
+						imu_temp->y = atof(temp);
+						break;
+					case 5:
+						imu_temp->m = atof(temp);
+						break;
+					defaut:
+						// Do nothing.
+						break;
+				}
+				read_ok = true;
+			}
+			fclose(fptr);
+		}
+		if (read_ok == true){
 			break;
 		}
-		usleep(1000);
-	}	
-	if (fptr == NULL){
-		return 0;
+		usleep(10000);
 	}
-	for (int i = 0; i < 6; ++i){
-		if (fscanf(fptr, "%s", temp) == EOF){
-			break;
-		}
-		switch (i){
-			case 0:
-				break;
-			case 1:
-				break;
-			case 2:
-				imu_temp->r = atof(temp);
-				break;
-			case 3:
-				imu_temp->p = atof(temp);
-				break;
-			case 4:
-				imu_temp->y = atof(temp);
-				break;
-			case 5:
-				imu_temp->m = atof(temp);
-				break;
-			defaut:
-				// Do nothing.
-				break;
-		}
-		read_ok = true;
-	}
+	free(temp);
+	free(imu_temp);
 
-	fclose(fptr);
 	if (read_ok == 1){
 		*imu_data = *imu_temp;
 		return 1;
@@ -243,29 +285,30 @@ timer_handler(void){
 
 	GDateTime *date_time = g_date_time_new_now_local();  
 	device->sys_time = g_date_time_format(date_time, "%H:%M:%S");
- 
+
 	//Read temperature and others every 5 seconds with offset by one.
 	if (atoi(g_date_time_format(date_time, "%S")) % 5 == 1) {
-		ui_read_temp_and_hum();
+		if (ui_read_temp_and_hum() != 1){
+			print_log(device->sys_time, "Reading temperature, humidity and pressure.", 'E');
+		}	
 	}
 
 	if (imu_data_zero_load == false){
 		if (read_imu_data(device->imu_zero, IMU_ZERO_LOG_SRC) != 1){
-			// Error while reading the zero position for imu from the file.
-			// print_error( "Read from the IMU zero config." );		
+			print_log(device->sys_time, "Reading from the IMU zero config.", 'E');
 		} else {
 			imu_data_zero_load = true;
 		}
 	}
 	if (read_imu_data(device->imu_data, IMU_LOG_SRC) != 1){
-		//printf( "ERROR: Read IMU data.\n");
+		print_log(device->sys_time, "Reading from the IMU data file.", 'E');
 	} else {
 		calculate_imu_data(device->imu_data, device->imu_zero);
 	}
 
 	/* ************** GPS *************************** */
 	if (gps_read(gps_serial, device->position, 0.15) != 1){
-		printf("ERROR: Read all GPS sentence.\n");	
+		print_log(device->sys_time, "Read all GPS sentence.", 'E');
 	} else {
 
 		if (device->position->fix_quality >= 1){
@@ -288,10 +331,12 @@ timer_handler(void){
 
 	if (turn_first_timer == 1  && device->position->fix_quality >= 1){  
 		GtkWidget *start_window;
-		start_window = GTK_WIDGET( gtk_builder_get_object(builder, "start_window" ));
+		start_window = GTK_WIDGET(gtk_builder_get_object(builder, "start_window"));
 		gtk_widget_destroy(GTK_WIDGET(start_window));
 		turn_first_timer = 0;
 	}
+	date_time = NULL;
+	free(date_time);
 	return true;
 }
 
@@ -300,16 +345,22 @@ timer_handler_init(void){
 
 	switch (turn_first_timer){
 		case 0:
-			//First empty start to load gtk interface.
+		{
+			GDateTime *date_time = g_date_time_new_now_local();  
+			device->sys_time = g_date_time_format(date_time, "%H:%M:%S");
+			print_log(device->sys_time, "Start application.", 'I');	
 			++turn_first_timer;
 			break;
+		}
 		case 1:	
-			//Initiation of the GPS module.
-			if(gps_init(GPS_SERIAL_SOURCE) == 1){
+			print_log(device->sys_time, "Initiation of the GPS module...", 'I');	
+			if (gps_init(GPS_SERIAL_SOURCE) == 1){
 				gps_serial = gps_open_connection(GPS_SERIAL_SOURCE);
 				g_timeout_add(200, (GSourceFunc)timer_handler, builder);
+				print_log(device->sys_time, "completed.", 'I');	
 				return false;
 			}
+			print_log(device->sys_time, "falied. ", 'E');	
 			break;
 		default:
 		       	// Do nothing.
