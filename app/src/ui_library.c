@@ -64,7 +64,7 @@ void ui_on_view_snow_depth(GtkWidget *widget, GtkBuilder * builder){
 	ui_set_visible_box(builder, WEATHER_CONDITIONS_BOX_SRC, WEATHER_CONDITIONS_BOX_FLAG);
 }
 
-void ui_on_view_gps_more_information( GtkWidget *widget, GtkBuilder * builder){  
+void ui_on_view_gps_more_information(GtkWidget *widget, GtkBuilder * builder){  
 	ui_set_visible_box(builder, GPS_MORE_INFORMATION_BOX_SRC, GPS_MORE_INFORMATION_BOX_FLAG); 
 }
 
@@ -73,7 +73,7 @@ void create_builder(GtkBuilder *builder){
 	GError *error = NULL;  
 	if (!gtk_builder_add_from_file(builder, UI_FILE, & error))
 	{
-		g_warning( "Nie można wczytać plilu buildera: %s", error->message );
+		g_warning("Nie można wczytać plilu buildera: %s", error->message);
 		g_error_free(error);
 	}
 	gtk_builder_connect_signals(builder, NULL );
@@ -82,7 +82,7 @@ void create_builder(GtkBuilder *builder){
 GtkWidget *create_window(GtkBuilder *builder, char *name){
     
 	GtkWidget *window; 
-	window = GTK_WIDGET(gtk_builder_get_object( builder, name ));  
+	window = GTK_WIDGET(gtk_builder_get_object(builder, name));  
 	gtk_window_fullscreen(GTK_WINDOW(window));
     
 	return window;
@@ -144,6 +144,7 @@ void ui_gps_icon_change(GtkBuilder *builder){
 		image_src = gdk_pixbuf_new_from_file (GPS_ICON_OFF_SRC, NULL);
 		gtk_image_set_from_pixbuf(image, image_src);
 	}
+	g_object_unref(image_src);
 }
 
 void ui_snow_sensor_icon_change(GtkBuilder *builder){
@@ -156,6 +157,7 @@ void ui_snow_sensor_icon_change(GtkBuilder *builder){
 		image_src = gdk_pixbuf_new_from_file (SNOW_SENSOR_ICON_OFF_SRC, NULL);
 		gtk_image_set_from_pixbuf(image, image_src);
 	}  
+	g_object_unref(image_src);
 }
 
 void ui_show_interface_item(GtkBuilder *builder){

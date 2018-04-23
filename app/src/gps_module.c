@@ -31,7 +31,8 @@ int gps_set_interface_attribs(int serial_port, int speed, int parity){
 	cfsetospeed (&tty, speed);
 	cfsetispeed (&tty, speed);
 	tty.c_cflag = (tty.c_cflag & ~CSIZE) | CS8;     // 8-bit chars
-							// disable IGNBRK for mismatched speed tests; otherwise receive break
+							// disable IGNBRK for mismatched 
+							// speed tests; otherwise receive break
 							// as \000 chars
 	tty.c_iflag &= ~IGNBRK;				// disable break processing
 	tty.c_lflag = 0;				// no signaling chars, no echo,
@@ -106,7 +107,8 @@ int gps_position_data_update(char *sentence, nmea *position){
 			if (minmea_parse_rmc(&frame_rmc, sentence)) {
 				position->lat = minmea_tocoord(&frame_rmc.latitude);
 				position->lon = minmea_tocoord(&frame_rmc.longitude);
-				position->speed = minmea_tofloat(&frame_rmc.speed) * GPS_KNOTS_TO_KM_PER_H;
+				position->speed = minmea_tofloat(&frame_rmc.speed)
+						* GPS_KNOTS_TO_KM_PER_H;
 				position->course = minmea_tofloat(&frame_rmc.course);
 				update = true;
 			}
@@ -172,8 +174,10 @@ int gps_read(int serial_port, nmea *position, double TIMEOUT_IN_S){
 			bool first_char_find = false;
 			do {
 				if (first_char_find != true){
-					if (select(serial_port + 1, &read_fds, &write_fds, &except_fds, &timeout) == 1){
-						if (read(serial_port, sentence, sizeof(*sentence)) > 0 && *sentence == '$'){
+					if (select(serial_port + 1, &read_fds, &write_fds,
+								&except_fds, &timeout) == 1){
+						if (read(serial_port, sentence, sizeof(*sentence))
+								> 0 && *sentence == '$'){
 
 							first_char_find = true;
 							sentence++;
@@ -190,7 +194,8 @@ int gps_read(int serial_port, nmea *position, double TIMEOUT_IN_S){
 						usleep(100);
 					}
 				}
-			} while (!(*(sentence- sizeof(*sentence)) == '\n' && first_char_find) == true);
+			} while (!(*(sentence- sizeof(*sentence)) == '\n' && first_char_find) 
+					== true);
 
 			*sentence = '\0';
 

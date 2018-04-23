@@ -106,8 +106,8 @@
             </child>
           </object>
           <packing>
-            <property name="x">675</property>
-            <property name="y">235</property>
+            <property name="x">660</property>
+            <property name="y">230</property>
           </packing>
         </child>
         <child>
@@ -187,13 +187,12 @@
             </child>
           </object>
           <packing>
-            <property name="x">565</property>
-            <property name="y">15</property>
+            <property name="x">545</property>
+            <property name="y">10</property>
           </packing>
         </child>
         <child>
           <object class="GtkButton" id="bt_coordinates">
-            <property name="width_request">135</property>
             <property name="height_request">30</property>
             <property name="visible">True</property>
             <property name="can_focus">True</property>
@@ -201,6 +200,7 @@
             <property name="opacity">0.84999999999999998</property>
             <child>
               <object class="GtkBox" id="box1">
+                <property name="width_request">170</property>
                 <property name="height_request">40</property>
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
@@ -289,8 +289,8 @@
             </child>
           </object>
           <packing>
-            <property name="x">655</property>
-            <property name="y">135</property>
+            <property name="x">600</property>
+            <property name="y">150</property>
           </packing>
         </child>
         <child>
@@ -365,7 +365,7 @@
             </child>
           </object>
           <packing>
-            <property name="x">440</property>
+            <property name="x">385</property>
             <property name="y">220</property>
           </packing>
         </child>
@@ -410,7 +410,7 @@
                     <property name="width_request">150</property>
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="label" translatable="yes">12:00</property>
+                    <property name="label" translatable="yes">00:00:00</property>
                     <attributes>
                       <attribute name="scale" value="2"/>
                     </attributes>
@@ -426,7 +426,7 @@
           </object>
           <packing>
             <property name="x">10</property>
-            <property name="y">420</property>
+            <property name="y">410</property>
           </packing>
         </child>
         <child>
@@ -448,7 +448,7 @@
                     <property name="can_focus">False</property>
                     <child>
                       <object class="GtkLabel" id="label8">
-                        <property name="width_request">100</property>
+                        <property name="width_request">120</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="label" translatable="yes">Temperatura:</property>
@@ -461,6 +461,7 @@
                     </child>
                     <child>
                       <object class="GtkLabel" id="lb_tem">
+                        <property name="width_request">60</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="label" translatable="yes">label</property>
@@ -484,7 +485,7 @@
                     <property name="can_focus">False</property>
                     <child>
                       <object class="GtkLabel" id="label10">
-                        <property name="width_request">100</property>
+                        <property name="width_request">120</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="halign">start</property>
@@ -500,6 +501,7 @@
                     </child>
                     <child>
                       <object class="GtkLabel" id="lb_hum">
+                        <property name="width_request">60</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="label" translatable="yes">label</property>
@@ -523,7 +525,7 @@
                     <property name="can_focus">False</property>
                     <child>
                       <object class="GtkLabel" id="label11">
-                        <property name="width_request">100</property>
+                        <property name="width_request">120</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="label" translatable="yes">Ciśnienie:</property>
@@ -536,6 +538,7 @@
                     </child>
                     <child>
                       <object class="GtkLabel" id="lb_press">
+                        <property name="width_request">60</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="label" translatable="yes">label</property>
@@ -595,7 +598,7 @@
                     <property name="halign">start</property>
                     <child>
                       <object class="GtkLabel" id="label1">
-                        <property name="width_request">75</property>
+                        <property name="width_request">105</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="label" translatable="yes">Szerokość: </property>
@@ -634,7 +637,7 @@
                     <property name="can_focus">False</property>
                     <child>
                       <object class="GtkLabel" id="label3">
-                        <property name="width_request">75</property>
+                        <property name="width_request">105</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="label" translatable="yes">Długość:</property>
@@ -673,7 +676,7 @@
                     <property name="can_focus">False</property>
                     <child>
                       <object class="GtkLabel" id="label7">
-                        <property name="width_request">75</property>
+                        <property name="width_request">105</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="label" translatable="yes">Wysokość:</property>
@@ -712,7 +715,7 @@
                     <property name="can_focus">False</property>
                     <child>
                       <object class="GtkLabel" id="label13">
-                        <property name="width_request">75</property>
+                        <property name="width_request">105</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="label" translatable="yes">Prędkość:</property>
@@ -751,7 +754,7 @@
                     <property name="can_focus">False</property>
                     <child>
                       <object class="GtkLabel" id="label5">
-                        <property name="width_request">75</property>
+                        <property name="width_request">105</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="label" translatable="yes">Czas GPS:</property>
@@ -788,7 +791,7 @@
           </object>
           <packing>
             <property name="x">10</property>
-            <property name="y">245</property>
+            <property name="y">235</property>
           </packing>
         </child>
         <child>
@@ -807,7 +810,7 @@
                     <property name="width_request">90</property>
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="pixbuf">../img/snow_rotate_1.png</property>
+                    <property name="pixbuf">../img/snow_rotate_2.png</property>
                   </object>
                   <packing>
                     <property name="expand">False</property>

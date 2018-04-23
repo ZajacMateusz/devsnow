@@ -4,7 +4,7 @@
  * Author: Mateusz Zając <zajac382@gmail.com>
 */
 
- /* ******************* include *************************** */
+ /* ******************* include *********************************** */
 
 #include <fcntl.h>
 #include <gdk/gdkkeysyms.h>
@@ -24,7 +24,7 @@
 #include <termios.h>
 #include <unistd.h>
 
-/* ******************* global variables **************************** */
+/* ******************* global variables *************************** */
 
 bool imu_data_zero_load = false;
 device_data *device;
@@ -37,12 +37,13 @@ int turn_first_timer = 0;
 OsmGpsMap *map;
 struct timeval tv;
 
-/* ******************* functions  ******************* */
+/* ******************* functions  ********************************* */
 
 static int
 save_log_to_file(device_data *device){
 
-	char *file_name = malloc(strlen(device->position->date) + strlen(SCRIPT_NAME) +strlen(LOG_EX) + 1);
+	char *file_name = malloc(strlen(device->position->date) 
+				+ strlen(SCRIPT_NAME) + strlen(LOG_EX) + 1);
 	char *path = malloc(strlen(STORAGE_PATH) + strlen(TEST_FILE_NAME)+1);
 	FILE *file;
 	struct stat sb;
@@ -56,7 +57,8 @@ save_log_to_file(device_data *device){
 		return 0;
 	} else {	
 		fclose(file);
-		path = malloc(strlen(STORAGE_PATH) + strlen(LOGS_MAIN_DIRECTORY) + strlen(LOGS_DIRECTORY) + 3 + strlen(file_name));
+		path = malloc(strlen(STORAGE_PATH) + strlen(LOGS_MAIN_DIRECTORY)
+				+ strlen(LOGS_DIRECTORY) + 3 + strlen(file_name));
 		sprintf(path, "%s/%s", STORAGE_PATH, LOGS_MAIN_DIRECTORY);
 
 		if (stat(path, &sb) == -1){
@@ -84,7 +86,18 @@ save_log_to_file(device_data *device){
 			file = fopen(path, "a+");
 			free(path);
 			if ( file != NULL){
-				fprintf(file, "time\tlatitude\tlongitude\taltitude\tspeed\tsnow_depth\ttemperature\thumidity\tpressure\trotate_1\trotate_2\n");
+				fprintf(file, "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+						"time",
+						"latitude",
+						"longitude",
+						"altitude",
+						"speed",
+						"snow_depth",
+						"temperature",
+						"humidity",
+						"pressure",
+						"rotate_1",
+						"rotate_2");
 				fclose(file);
 			} else {
 				return -1;
@@ -95,9 +108,18 @@ save_log_to_file(device_data *device){
 		free(file_name);
 		free(path);
 		if (file != NULL){
-			fprintf(file, "%s\t%f\t%f\t%f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\n", device->position->time, device->position->lat,
-					device->position->lon, device->position->alt, device->position->speed, device->snow_depth, 
-					device->temperature, device->humidity, device->pressure, device->imu_data->r, device->imu_data->p );
+			fprintf(file, "%s\t%f\t%f\t%f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\n",
+					device->position->time,
+					device->position->lat, 
+					device->position->lon,
+					device->position->alt, 
+					device->position->speed,
+					device->snow_depth, 
+					device->temperature,
+					device->humidity, 
+					device->pressure,
+					device->imu_data->r, 
+					device->imu_data->p );
 			fclose(file);
 			return 1;
 		}
@@ -277,7 +299,8 @@ calculate_imu_data(imu *imu_data, imu *imu_zero){
 static void
 ui_map_set_center(void){
 
-	osm_gps_map_set_center_and_zoom(map, device->position->lat, device->position->lon, 20);
+	osm_gps_map_set_center_and_zoom(map, device->position->lat,
+					device->position->lon, 20);
 }
 
 static bool
@@ -289,13 +312,15 @@ timer_handler(void){
 	//Read temperature and others every 5 seconds with offset by one.
 	if (atoi(g_date_time_format(date_time, "%S")) % 5 == 1) {
 		if (ui_read_temp_and_hum() != 1){
-			print_log(device->sys_time, "Reading temperature, humidity and pressure.", 'E');
+			print_log(device->sys_time,
+				"Reading temperature, humidity and pressure.", 'E');
 		}	
 	}
 
 	if (imu_data_zero_load == false){
 		if (read_imu_data(device->imu_zero, IMU_ZERO_LOG_SRC) != 1){
-			print_log(device->sys_time, "Reading from the IMU zero config.", 'E');
+			print_log(device->sys_time, 
+				"Reading from the IMU zero config.", 'E');
 		} else {
 			imu_data_zero_load = true;
 		}
@@ -315,8 +340,11 @@ timer_handler(void){
 			if (device->position->lat != 0 && device->position->lon != 0){
 				osm_gps_map_image_remove_all(map);
 				osm_gps_map_gps_clear(map);
-				osm_gps_map_gps_add(map, device->position->lat, device->position->lon, device->position->course);
-				//osm_gps_map_set_center_and_zoom ( map, device->position->lat, device->position->lon, 18);
+				osm_gps_map_gps_add(map, device->position->lat,
+							device->position->lon,
+							device->position->course);
+				//osm_gps_map_set_center_and_zoom ( map, device->position->lat,
+				//					device->position->lon, 18);
 				ui_set_flag(GPS_ICON_FLAG);
 				ui_gps_icon_change(builder);
 				save_log_to_file(device);
@@ -335,8 +363,7 @@ timer_handler(void){
 		gtk_widget_destroy(GTK_WIDGET(start_window));
 		turn_first_timer = 0;
 	}
-	date_time = NULL;
-	free(date_time);
+	g_date_time_unref(date_time);	
 	return true;
 }
 
@@ -394,11 +421,16 @@ device_data_init_null(device_data *dev){
 
 static void
 ui_signal_connect(GtkBuilder *builder){
-	g_signal_connect(gtk_builder_get_object(builder, "bt_set_center"), "clicked", G_CALLBACK(ui_map_set_center), builder);
-	g_signal_connect(gtk_builder_get_object(builder, "bt_show_snow_depth"), "clicked", G_CALLBACK(ui_on_view_snow_depth), builder);
-	g_signal_connect(gtk_builder_get_object(builder, "bt_show_coordinates"), "clicked", G_CALLBACK(ui_on_view_coordinates), builder);
-	g_signal_connect(gtk_builder_get_object(builder, "bt_show_gps_more_information"), "clicked", G_CALLBACK(ui_on_view_gps_more_information), builder);
-	g_signal_connect(gtk_builder_get_object(builder, "bt_view_menu"), "clicked", G_CALLBACK(ui_on_view_menu), builder);
+	g_signal_connect(gtk_builder_get_object(builder, "bt_set_center"), "clicked",
+			G_CALLBACK(ui_map_set_center), builder);
+	g_signal_connect(gtk_builder_get_object(builder, "bt_show_snow_depth"), "clicked",
+			G_CALLBACK(ui_on_view_snow_depth), builder);
+	g_signal_connect(gtk_builder_get_object(builder, "bt_show_coordinates"), "clicked",
+			G_CALLBACK(ui_on_view_coordinates), builder);
+	g_signal_connect(gtk_builder_get_object(builder, "bt_show_gps_more_information"), "clicked",
+	       		G_CALLBACK(ui_on_view_gps_more_information), builder);
+	g_signal_connect(gtk_builder_get_object(builder, "bt_view_menu"), "clicked",
+			G_CALLBACK(ui_on_view_menu), builder);
 
 }
 
@@ -409,7 +441,8 @@ on_download_clicked_event(GtkWidget *widget, gpointer user_data)
 	OsmGpsMap *map = OSM_GPS_MAP(user_data);
 	OsmGpsMapPoint pt1, pt2;
 
-	osm_gps_map_set_center_and_zoom (map, device->position->lat, device->position->lon, 15);
+	osm_gps_map_set_center_and_zoom (map, device->position->lat,
+					device->position->lon, 15);
 	osm_gps_map_get_bbox(map, &pt1, &pt2);
 	g_object_get(map, "zoom", &zoom, "max-zoom", &max_zoom, NULL);
 	osm_gps_map_download_maps(map, &pt1, &pt2, zoom, max_zoom);
@@ -462,8 +495,10 @@ main(int argc, char *argv[]){
 			"tile-cache", "/home/pi/app/app/tmp/",
 			NULL);
 
-	g_signal_connect(gtk_builder_get_object(builder, "bt_download"), "clicked", G_CALLBACK(on_download_clicked_event), (gpointer) map);
-	gtk_box_pack_start(GTK_BOX(gtk_builder_get_object(builder, "box_map")), GTK_WIDGET(map), TRUE, TRUE, 0);
+	g_signal_connect(gtk_builder_get_object(builder, "bt_download"), "clicked",
+				G_CALLBACK(on_download_clicked_event), (gpointer) map);
+	gtk_box_pack_start(GTK_BOX(gtk_builder_get_object(builder, "box_map")),
+				GTK_WIDGET(map), TRUE, TRUE, 0);
 
 	/* ****************** GTK INTERFACE  *********************** */
 	gtk_widget_show_all(main_window);
